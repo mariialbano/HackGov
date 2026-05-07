@@ -38,6 +38,6 @@ public class Financeiro {
     public void exibirInformacoes() {
         System.out.println("Financeiro: " + descricao);
         System.out.println("Valor: " + valor);
-        System.out.println("Responsável: " + responsavel.getNome());
+        System.out.println("Responsável: " + responsavel.getNome());;
     }
 }

@@ -2,12 +2,14 @@ public class Solicitacao {
     private String titulo;
     private String descricao;
     private Usuario solicitante;
+    private String zona;
 
     // Construtor
-    public Solicitacao(String titulo, String descricao, Usuario solicitante) {
+    public Solicitacao(String titulo, String descricao, Usuario solicitante, String zona) {
         this.titulo = titulo;
         this.descricao = descricao;
         this.solicitante = solicitante;
+        this.zona = zona;
     }
 
     // Getters e Setters
@@ -15,29 +17,22 @@ public class Solicitacao {
         return titulo;
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
-
     public String getDescricao() {
         return descricao;
-    }
-
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
     }
 
     public Usuario getSolicitante() {
         return solicitante;
     }
 
-    public void setSolicitante(Usuario solicitante) {
-        this.solicitante = solicitante;
+    public String getZona() {
+        return zona;
     }
 
     public void exibirInformacoes() {
         System.out.println("Solicitação: " + titulo);
         System.out.println("Descrição: " + descricao);
         System.out.println("Solicitante: " + solicitante.getNome());
+        System.out.println("Zona: " + zona);
     }
 }
