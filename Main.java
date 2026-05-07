@@ -28,8 +28,6 @@ public class Main {
 
         financeiro.exibirInformacoes();
 
-        financeiro.exportarPDF();
-
         Feedback feedback = new Feedback(
                 "O sistema está muito intuitivo.",
                 user
