@@ -1,18 +1,26 @@
+// Usuario.java
+
 public class Usuario {
+
     private String nome;
     private String email;
     private String senha;
     private String zona;
+    private boolean acessibilidadeAtiva;
 
     // Construtor
-    public Usuario(String nome, String email, String senha, String zona) {
+    public Usuario(String nome, String email, String senha,
+                   String zona, boolean acessibilidadeAtiva) {
+
         this.nome = nome;
         this.email = email;
         this.senha = senha;
         this.zona = zona;
+        this.acessibilidadeAtiva = acessibilidadeAtiva;
     }
 
     // Getters e Setters
+
     public String getNome() {
         return nome;
     }
@@ -45,9 +53,21 @@ public class Usuario {
         this.zona = zona;
     }
 
+    public boolean isAcessibilidadeAtiva() {
+        return acessibilidadeAtiva;
+    }
+
+    public void setAcessibilidadeAtiva(boolean acessibilidadeAtiva) {
+        this.acessibilidadeAtiva = acessibilidadeAtiva;
+    }
+
     public void exibirInformacoes() {
-        System.out.println("Usuário criado: " + nome);
+
+        System.out.println("USUÁRIO");
+        System.out.println("Nome: " + nome);
         System.out.println("Email: " + email);
-        System.out.println("Zona selecionada: " + zona);
+        System.out.println("Zona: " + zona);
+        System.out.println("Acessibilidade ativa: "
+                + acessibilidadeAtiva);
     }
 }
