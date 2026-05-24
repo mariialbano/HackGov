@@ -1,3 +1,8 @@
+node_modules
+# Default ignored files
+/shelf/
+/workspace.xml
+
 # Ignorar dependências instaladas (elas são baixadas de novo com npm install)
 **/node_modules/
 frontend/dist/
