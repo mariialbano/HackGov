@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  /* Registrando as cores customizadas perfeitamente para o Tailwind v4 */
+  --color-gov-orange: #ff8101;
+  --color-gov-green: #51ba7e;
+  --color-gov-bg: #f9fafb;
+}
+
+body {
+  background-color: var(--color-gov-bg);
+}

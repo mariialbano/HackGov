@@ -1,0 +1,7 @@
+# Ignorar dependências instaladas (elas são baixadas de novo com npm install)
+**/node_modules/
+frontend/dist/
+
+# IGNORAR ARQUIVOS SECRETOS (SEGURANÇA DA API KEY)
+backend/.env
+.env
