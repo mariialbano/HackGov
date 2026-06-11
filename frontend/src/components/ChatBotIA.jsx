@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Star } from 'lucide-react';
+import { sendMessage } from '../api/chatService';
 
 export default function ChatbotIA({ onOpenFeedback }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,17 +25,10 @@ export default function ChatbotIA({ onOpenFeedback }) {
     setLoading(true);
 
     try {
-      // Chamada para o backend Node (porta 3001)
-      const response = await fetch('http://localhost:3001/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMessage.text })
-      });
-      
-      const data = await response.json();
+      const data = await sendMessage(userMessage.text);
       setMessages(prev => [...prev, { text: data.reply, sender: 'bot' }]);
-    } catch (error) {
-      setMessages(prev => [...prev, { text: "Erro na conexão com o servidor. Verifique se o backend está rodando.", sender: 'bot' }]);
+    } catch {
+      setMessages(prev => [...prev, { text: "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.", sender: 'bot' }]);
     } finally {
       setLoading(false);
     }

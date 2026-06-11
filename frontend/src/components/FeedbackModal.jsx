@@ -1,20 +1,57 @@
 import React, { useState } from 'react';
 import { X, Star } from 'lucide-react';
+import StatusMessage from './StatusMessage';
+import { submitFeedback } from '../api/feedbackService';
 
 export default function FeedbackModal({ isOpen, onClose }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comentario, setComentario] = useState('');
+  const [status, setStatus] = useState(null);
+  const [statusMessage, setStatusMessage] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert(`Obrigado pelo feedback! Nota: ${rating} estrelas.`);
+  const resetForm = () => {
     setRating(0);
+    setHover(0);
     setComentario('');
+    setStatus(null);
+    setStatusMessage('');
+  };
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus(null);
+    setStatusMessage('');
+
+    if (!rating || rating < 1) {
+      setStatus('error');
+      setStatusMessage('Por favor, selecione uma nota de 1 a 5 estrelas.');
+      return;
+    }
+
+    setStatus('loading');
+    setStatusMessage('Enviando avaliação...');
+
+    try {
+      const result = await submitFeedback({ rating, comentario });
+      setStatus('success');
+      setStatusMessage(result.message);
+      setRating(0);
+      setComentario('');
+    } catch (error) {
+      setStatus('error');
+      setStatusMessage(error.message || 'Erro ao enviar avaliação. Tente novamente.');
+    }
+  };
+
+  const isLoading = status === 'loading';
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
@@ -23,7 +60,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
         {/* Header do Modal */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800">Avalie sua Experiência</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors" disabled={isLoading}>
             <X size={22} />
           </button>
         </div>
@@ -40,9 +77,16 @@ export default function FeedbackModal({ isOpen, onClose }) {
                   type="button"
                   key={index}
                   className="transition-transform duration-100 hover:scale-110 outline-none"
-                  onClick={() => setRating(index)}
+                  onClick={() => {
+                    setRating(index);
+                    if (status === 'error') {
+                      setStatus(null);
+                      setStatusMessage('');
+                    }
+                  }}
                   onMouseEnter={() => setHover(index)}
                   onMouseLeave={() => setHover(0)}
+                  disabled={isLoading}
                 >
                   <Star
                     size={32}
@@ -67,24 +111,28 @@ export default function FeedbackModal({ isOpen, onClose }) {
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
               placeholder="Conte-nos mais sobre sua experiência..."
-              className="w-full border border-gray-200 bg-gray-50 rounded-xl p-3 text-sm outline-none focus:border-gov-orange focus:bg-white transition-all resize-none"
+              disabled={isLoading}
+              className="w-full border border-gray-200 bg-gray-50 rounded-xl p-3 text-sm outline-none focus:border-gov-orange focus:bg-white transition-all resize-none disabled:opacity-60"
             ></textarea>
           </div>
+
+          <StatusMessage type={status} message={statusMessage} />
 
           {/* Botões de Ação Inferiores */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors"
+              onClick={handleClose}
+              disabled={isLoading}
+              className="flex-1 bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-60"
             >
-              Cancelar
+              {status === 'success' ? 'Fechar' : 'Cancelar'}
             </button>
             <button
               type="submit"
-              disabled={rating === 0}
-              className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-xs ${
-                rating === 0
+              disabled={isLoading || status === 'success'}
+              className={`flex-1 font-bold py-3 rounded-xl transition-all shadow-xs disabled:opacity-60 ${
+                isLoading || status === 'success'
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : 'bg-gov-green text-white hover:bg-green-600'
               }`}

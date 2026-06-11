@@ -1,61 +1,210 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import FormField from '../components/FormField';
+import ConfirmDialog from '../components/ConfirmDialog';
+import Toast from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download } from 'lucide-react';
+import { Download, Save, Pencil, Trash2, X, FolderOpen } from 'lucide-react';
 
 export default function Inflacao() {
   const [valor, setValor] = useState(1000);
   const [anos, setAnos] = useState(5);
-  const [inflacao, setInflacao] = useState(4.5); // % ao ano
+  const [inflacao, setInflacao] = useState(4.5);
 
-  // Cálculo mockado da inflação (Valor Futuro)
-  const valorFuturo = (valor * Math.pow(1 + (inflacao / 100), anos)).toFixed(2);
-  
-  // Gerando dados para o gráfico
-  const data = Array.from({ length: parseInt(anos) + 1 }, (_, i) => ({
+  const [simulacoes, setSimulacoes] = useState(() => {
+    const saved = localStorage.getItem('hackgov_simulacoes');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [nomeSimulacao, setNomeSimulacao] = useState('');
+  const [editingSimulacao, setEditingSimulacao] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+
+  const { notification, showSuccess, clear } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('hackgov_simulacoes', JSON.stringify(simulacoes));
+  }, [simulacoes]);
+
+  const valorNum = parseFloat(valor) || 0;
+  const anosNum = parseInt(anos, 10) || 0;
+  const inflacaoNum = parseFloat(inflacao) || 0;
+
+  const valorFuturo = valorNum > 0 && anosNum >= 0
+    ? (valorNum * Math.pow(1 + inflacaoNum / 100, anosNum)).toFixed(2)
+    : '0.00';
+
+  const data = Array.from({ length: Math.max(anosNum, 0) + 1 }, (_, i) => ({
     ano: `Ano ${i}`,
-    valor: (valor * Math.pow(1 + (inflacao / 100), i)).toFixed(2)
+    valor: (valorNum * Math.pow(1 + inflacaoNum / 100, i)).toFixed(2),
   }));
+
+  const crescimento = valorNum > 0 ? ((valorFuturo / valorNum - 1) * 100).toFixed(1) : '0.0';
+
+  const openSaveModal = (simulacao = null) => {
+    if (simulacao) {
+      setEditingSimulacao(simulacao);
+      setNomeSimulacao(simulacao.nome);
+    } else {
+      setEditingSimulacao(null);
+      setNomeSimulacao('');
+    }
+    setFormErrors({});
+    setSaveModalOpen(true);
+  };
+
+  const handleSaveSimulacao = (e) => {
+    e.preventDefault();
+    const nome = nomeSimulacao.trim();
+    const errors = {};
+
+    if (!nome) {
+      errors.nome = 'O nome da simulação é obrigatório.';
+    } else if (nome.length < 3) {
+      errors.nome = 'O nome deve ter no mínimo 3 caracteres.';
+    }
+
+    if (valorNum <= 0) errors.geral = 'O valor atual deve ser maior que zero.';
+    if (anosNum <= 0) errors.geral = errors.geral || 'O período deve ser maior que zero.';
+    if (inflacaoNum < 0) errors.geral = errors.geral || 'A taxa de inflação não pode ser negativa.';
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const payload = {
+      nome,
+      valor: valorNum,
+      anos: anosNum,
+      inflacao: inflacaoNum,
+      valorFuturo: parseFloat(valorFuturo),
+      atualizadoEm: new Date().toLocaleDateString('pt-BR'),
+    };
+
+    if (editingSimulacao) {
+      setSimulacoes((prev) =>
+        prev.map((s) => (s.id === editingSimulacao.id ? { ...s, ...payload } : s))
+      );
+      showSuccess(`Simulação "${nome}" atualizada com sucesso.`);
+    } else {
+      setSimulacoes((prev) => [{ id: Date.now(), ...payload }, ...prev]);
+      showSuccess(`Simulação "${nome}" salva com sucesso.`);
+    }
+
+    setSaveModalOpen(false);
+    setNomeSimulacao('');
+    setEditingSimulacao(null);
+  };
+
+  const handleLoadSimulacao = (sim) => {
+    setValor(sim.valor);
+    setAnos(sim.anos);
+    setInflacao(sim.inflacao);
+    showSuccess(`Simulação "${sim.nome}" carregada.`);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    setSimulacoes((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+    showSuccess(`Simulação "${deleteTarget.nome}" excluída com sucesso.`);
+    setDeleteTarget(null);
+  };
+
+  const handleExportPdf = () => {
+    showSuccess('Relatório preparado. Em produção, o PDF seria gerado e baixado automaticamente.');
+  };
 
   return (
     <div className="min-h-screen bg-gov-bg">
       <Navbar />
+      <Toast notification={notification} onClose={clear} />
+
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Simulador de Inflação</h1>
-        
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Simulador de Inflação</h1>
+          <p className="text-sm text-gray-500 mt-1">Projete o impacto da inflação no seu poder de compra ao longo do tempo</p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Calculadora */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
             <h2 className="font-bold text-lg mb-4 text-gov-orange">Calculadora</h2>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Valor Atual (R$)</label>
-                <input type="number" value={valor} onChange={e => setValor(e.target.value)} className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none" />
+              <FormField
+                label="Valor Atual (R$)"
+                hint="Quanto vale hoje o produto ou serviço que deseja simular."
+                required
+              >
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none"
+                />
+              </FormField>
+
+              <FormField
+                label="Período (Anos)"
+                hint="Por quantos anos deseja projetar o impacto inflacionário."
+                required
+              >
+                <input
+                  type="number"
+                  min="1"
+                  value={anos}
+                  onChange={(e) => setAnos(e.target.value)}
+                  className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none"
+                />
+              </FormField>
+
+              <FormField
+                label="Taxa de Inflação (% ao ano)"
+                hint="Taxa anual estimada. O IPCA médio dos últimos anos gira em torno de 4% a 5%."
+                required
+              >
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={inflacao}
+                  onChange={(e) => setInflacao(e.target.value)}
+                  className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none"
+                />
+              </FormField>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => openSaveModal()}
+                  className="flex-1 bg-gov-green text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-green-600 transition font-medium text-sm"
+                >
+                  <Save size={16} /> Salvar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPdf}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition text-sm"
+                >
+                  <Download size={16} /> Exportar PDF
+                </button>
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Período (Anos)</label>
-                <input type="number" value={anos} onChange={e => setAnos(e.target.value)} className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Taxa de Inflação (% ao ano)</label>
-                <input type="number" value={inflacao} onChange={e => setInflacao(e.target.value)} className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none" />
-              </div>
-              <button className="w-full mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition">
-                <Download size={18} /> Exportar PDF
-              </button>
             </div>
           </div>
 
-          {/* Gráfico e Resultados */}
           <div className="md:col-span-2 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-xl border shadow-sm">
                 <p className="text-sm text-gray-500">Poder de compra necessário</p>
-                <h3 className="text-2xl font-bold text-gov-orange">R$ {valorFuturo}</h3>
+                <h3 className="text-2xl font-bold text-gov-orange">R$ {parseFloat(valorFuturo).toLocaleString('pt-BR')}</h3>
+                <p className="text-xs text-gray-400 mt-1">Valor equivalente após {anosNum} ano{anosNum !== 1 ? 's' : ''}</p>
               </div>
               <div className="bg-white p-4 rounded-xl border shadow-sm">
                 <p className="text-sm text-gray-500">Crescimento Nominal</p>
-                <h3 className="text-2xl font-bold text-red-500">+ {((valorFuturo / valor - 1) * 100).toFixed(1)}%</h3>
+                <h3 className="text-2xl font-bold text-red-500">+ {crescimento}%</h3>
+                <p className="text-xs text-gray-400 mt-1">Aumento acumulado no período</p>
               </div>
             </div>
 
@@ -64,16 +213,129 @@ export default function Inflacao() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="ano" tick={{fontSize: 12}} />
-                  <YAxis tick={{fontSize: 12}} />
-                  <Tooltip formatter={(value) => `R$ ${value}`} />
-                  <Line type="monotone" dataKey="valor" stroke="#ff8101" strokeWidth={3} dot={{r: 4}} />
+                  <XAxis dataKey="ano" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v) => `R$ ${v}`} />
+                  <Line type="monotone" dataKey="valor" stroke="#ff8101" strokeWidth={3} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-700">Simulações Salvas</h3>
+                <span className="text-xs text-gray-400">{simulacoes.length} registro{simulacoes.length !== 1 ? 's' : ''}</span>
+              </div>
+
+              {simulacoes.length === 0 ? (
+                <div className="text-center py-6">
+                  <FolderOpen size={32} className="text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Nenhuma simulação salva ainda.</p>
+                  <p className="text-xs text-gray-400 mt-1">Configure os parâmetros e clique em &quot;Salvar&quot; para guardar cenários.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {simulacoes.map((sim) => (
+                    <div
+                      key={sim.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-gov-orange/30 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-800 truncate">{sim.nome}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          R$ {sim.valor.toLocaleString('pt-BR')} · {sim.anos} anos · {sim.inflacao}% a.a.
+                        </p>
+                        <p className="text-xs text-gov-orange font-medium mt-0.5">
+                          Projeção: R$ {sim.valorFuturo.toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 ml-3 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleLoadSimulacao(sim)}
+                          className="p-2 text-gray-400 hover:text-gov-orange hover:bg-orange-50 rounded-lg transition-colors text-xs font-medium"
+                          title="Carregar simulação"
+                        >
+                          <FolderOpen size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openSaveModal(sim)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar nome"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(sim)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Excluir simulação"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
+
+      {saveModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100">
+            <div className="bg-gov-orange text-white p-5 flex justify-between items-center">
+              <h2 className="font-bold text-lg">{editingSimulacao ? 'Editar Simulação' : 'Salvar Simulação'}</h2>
+              <button type="button" onClick={() => setSaveModalOpen(false)} className="hover:opacity-80">
+                <X size={22} />
+              </button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={handleSaveSimulacao}>
+              <FormField
+                label="Nome da Simulação"
+                hint="Dê um nome descritivo para identificar este cenário (ex: Reserva 2030, Custo moradia 5 anos)."
+                required
+                error={formErrors.nome}
+              >
+                <input
+                  type="text"
+                  value={nomeSimulacao}
+                  onChange={(e) => {
+                    setNomeSimulacao(e.target.value);
+                    if (formErrors.nome) setFormErrors((prev) => ({ ...prev, nome: undefined }));
+                  }}
+                  placeholder="Ex: Projeção reserva de emergência"
+                  className="w-full border-2 border-gray-100 rounded-xl p-3 bg-gray-50 text-sm outline-none focus:border-gov-orange focus:bg-white transition-all"
+                />
+              </FormField>
+
+              {formErrors.geral && (
+                <p className="text-xs text-red-700 bg-red-50 p-3 rounded-xl border border-red-200">{formErrors.geral}</p>
+              )}
+
+              <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                Parâmetros: R$ {valorNum.toLocaleString('pt-BR')} · {anosNum} anos · {inflacaoNum}% a.a. → R$ {parseFloat(valorFuturo).toLocaleString('pt-BR')}
+              </p>
+
+              <button type="submit" className="w-full bg-gov-green text-white font-bold py-3 rounded-xl hover:bg-green-600 transition">
+                {editingSimulacao ? 'Atualizar' : 'Salvar Simulação'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Excluir simulação"
+        message={`Tem certeza que deseja excluir "${deleteTarget?.nome}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
