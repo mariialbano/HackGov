@@ -10,38 +10,51 @@ import Metas from './pages/Metas';
 import Indicadores from './pages/Indicadores';
 import Comparativos from './pages/Comparativos';
 
-// Importando los Componentes Globais e o Novo Modal
+// Importando os Componentes Globais e o Novo Modal
 import ChatbotIA from './components/ChatBotIA';
 import FeedbackModal from './components/FeedbackModal';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
   // Estado para controlar a abertura do modal de estrelas
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Rota inicial: Tela de Login */}
-        <Route path="/" element={<Login />} />
-        
-        {/* Rotas internas do sistema */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/protocolos" element={<Protocolos />} />
-        <Route path="/inflacao" element={<Inflacao />} />
-        <Route path="/metas" element={<Metas />} />
-        <Route path="/indicadores" element={<Indicadores />} />
-        <Route path="/comparativos" element={<Comparativos />} />
-      </Routes>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Rota inicial: Tela de Login */}
+          <Route path="/" element={<Login />} />
 
-      {/* Injeta a função de abrir o feedback ao clicar na estrela verde do chatbot */}
-      <ChatbotIA onOpenFeedback={() => setIsFeedbackOpen(true)} />
+          {/* Rotas internas: exigem usuário autenticado */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/protocolos" element={<ProtectedRoute><Protocolos /></ProtectedRoute>} />
+          <Route path="/inflacao" element={<ProtectedRoute><Inflacao /></ProtectedRoute>} />
+          <Route path="/metas" element={<ProtectedRoute><Metas /></ProtectedRoute>} />
+          <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
 
-      {/* Renderiza o Modal na tela se o estado for verdadeiro */}
-      <FeedbackModal 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
-      />
-    </BrowserRouter>
+          {/* Área restrita: apenas perfil atendente (controle de acesso por perfis) */}
+          <Route
+            path="/comparativos"
+            element={
+              <ProtectedRoute perfis={['atendente']}>
+                <Comparativos />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+
+        {/* Injeta a função de abrir o feedback ao clicar na estrela verde do chatbot */}
+        <ChatbotIA onOpenFeedback={() => setIsFeedbackOpen(true)} />
+
+        {/* Renderiza o Modal na tela se o estado for verdadeiro */}
+        <FeedbackModal
+          isOpen={isFeedbackOpen}
+          onClose={() => setIsFeedbackOpen(false)}
+        />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
