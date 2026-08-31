@@ -1,16 +1,14 @@
-import { simulateRequest } from './apiClient';
+// Serviço do recurso /feedbacks — consome a API RESTful.
+// O envio não exige autenticação (auth: false): avaliar o serviço
+// público não deve depender de o cidadão estar logado.
+
+import { api } from './apiClient';
 
 export function submitFeedback({ rating, comentario }) {
-  return simulateRequest(() => {
-    if (!rating || rating < 1 || rating > 5) {
-      throw new Error('Por favor, selecione uma nota de 1 a 5 estrelas.');
-    }
+  return api.post('/feedbacks', { rating, comentario }, { auth: false });
+}
 
-    return {
-      success: true,
-      message: `Obrigado pelo feedback! Nota: ${rating} estrela${rating > 1 ? 's' : ''}.`,
-      rating,
-      comentario: comentario || '',
-    };
-  });
+// Consolidado das avaliações — restrito ao perfil atendente.
+export function listarFeedbacks() {
+  return api.get('/feedbacks');
 }

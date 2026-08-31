@@ -1,18 +1,19 @@
+import { api } from './apiClient';
 import { validarCpf, validarSenha, sanitizeText } from '../utils/validators';
 
-// API de autenticação (Segurança da Informação)
-// O login é processado no BACKEND (/api/login), onde as senhas são
-// verificadas contra hashes bcrypt — nunca em texto puro.
+// Serviço do recurso /auth — consome a API RESTful.
+//
+// O login é processado no BACKEND (POST /api/v1/auth/login), onde as
+// senhas são verificadas contra hashes bcrypt — nunca em texto puro.
 //
 // Contrato de integração:
-//   sucesso -> { success: true, user: { nome, cpf, perfil }, token }
-//   falha   -> HTTP 400/401 com { error: mensagem amigável }
+//   sucesso -> { success: true, token, user: { nome, cpf, perfil } }
+//   falha   -> HTTP 400/401/429 com { error: { code, message } }
 //
 // Perfis disponíveis:
 //   'cidadao'   -> acesso às funcionalidades públicas do sistema
-//   'atendente' -> acesso adicional a relatórios comparativos (área restrita)
-
-const API_URL = 'http://localhost:3001';
+//   'atendente' -> acesso adicional a relatórios comparativos e à
+//                  tramitação de protocolos (área restrita)
 
 export async function login({ cpf, senha }) {
   // Pré-validação no cliente: feedback imediato e menos requisições
@@ -28,22 +29,15 @@ export async function login({ cpf, senha }) {
     throw new Error(erroSenha);
   }
 
-  let response;
-  try {
-    response = await fetch(`${API_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cpf: cpfLimpo, senha }),
-    });
-  } catch {
-    throw new Error('Servidor indisponível. Verifique se o backend está rodando.');
-  }
+  return api.post('/auth/login', { cpf: cpfLimpo, senha }, { auth: false });
+}
 
-  const data = await response.json();
+// Encerra a sessão no servidor, invalidando o token.
+export function logout() {
+  return api.post('/auth/logout');
+}
 
-  if (!response.ok) {
-    throw new Error(data.error || 'Não foi possível fazer login. Tente novamente.');
-  }
-
-  return data;
+// Confirma se o token guardado ainda é válido.
+export function obterUsuarioAtual() {
+  return api.get('/auth/me');
 }

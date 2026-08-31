@@ -36,6 +36,9 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    // Invalida o token também no servidor (POST /auth/logout).
+    // Se a chamada falhar, a sessão local é encerrada mesmo assim.
+    authService.logout().catch(() => {});
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(ACTIVITY_KEY);
     setSession(null);

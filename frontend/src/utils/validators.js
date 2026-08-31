@@ -6,6 +6,7 @@ export function sanitizeText(value, maxLength = 500) {
   if (typeof value !== 'string') return '';
   return value
     .replace(/<[^>]*>/g, '') // remove tags HTML (mitiga XSS)
+    // eslint-disable-next-line no-control-regex -- remover caracteres de controle e justamente o objetivo aqui
     .replace(/[\u0000-\u001F\u007F]/g, '') // remove caracteres de controle
     .trim()
     .slice(0, maxLength);

@@ -1,50 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import FormField from '../components/FormField';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
+import StatusMessage from '../components/StatusMessage';
 import { useToast } from '../hooks/useToast';
-import { Plus, X, FileText, Pencil, Trash2, Eye } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Plus, X, FileText, Pencil, Trash2, Eye, Loader2, RefreshCw } from 'lucide-react';
+import { PROTOCOLO_TIPOS, STATUS_OPCOES, formatarData } from '../utils/protocoloUtils';
 import {
-  PROTOCOLO_TIPOS,
-  STATUS_OPCOES,
-  getStatusOpcao,
-  gerarIdProtocolo,
-  formatarDataHoje,
-} from '../utils/protocoloUtils';
-
-const PROTOCOLOS_INICIAIS = [
-  {
-    id: '2026050712345',
-    tipo: 'Análise de viabilidade de Metas Financeiras',
-    descricao: 'Solicitação de análise para meta de reserva de emergência de R$ 10.000 em 12 meses.',
-    data: '07/05/2026',
-    status: 'Em análise',
-    progresso: 66,
-    prazo: 'Prazo: 15 dias úteis',
-    corPrazo: 'bg-gov-orange',
-  },
-  {
-    id: '2026042098765',
-    tipo: 'Inscrição em capacitação financeira',
-    descricao: 'Inscrição no curso de educação financeira oferecido pela prefeitura de Taubaté.',
-    data: '20/04/2026',
-    status: 'Concluído',
-    progresso: 100,
-    prazo: 'Prazo: Concluído',
-    corPrazo: 'bg-gov-green',
-  },
-  {
-    id: '2026031554321',
-    tipo: 'Análise de viabilidade de Metas Financeiras',
-    descricao: 'Consulta sobre viabilidade de meta para viagem internacional no prazo de 18 meses.',
-    data: '15/03/2026',
-    status: 'Solicitação Criada',
-    progresso: 33,
-    prazo: 'Prazo: 5 dias úteis',
-    corPrazo: 'bg-blue-600',
-  },
-];
+  listarProtocolos,
+  criarProtocolo,
+  atualizarProtocolo,
+  alterarStatus,
+  excluirProtocolo,
+} from '../api/protocoloService';
 
 const FORM_INICIAL = {
   tipo: PROTOCOLO_TIPOS[0],
@@ -53,10 +23,16 @@ const FORM_INICIAL = {
 };
 
 export default function Protocolos() {
-  const [protocolos, setProtocolos] = useState(() => {
-    const saved = localStorage.getItem('hackgov_protocolos');
-    return saved ? JSON.parse(saved) : PROTOCOLOS_INICIAIS;
-  });
+  const { user } = useAuth();
+  const ehAtendente = user?.perfil === 'atendente';
+
+  // Estados da integração com a API: carregando / sucesso / falha
+  const [protocolos, setProtocolos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const [erroFormulario, setErroFormulario] = useState(null);
+  const [filtroStatus, setFiltroStatus] = useState('');
 
   const [modalMode, setModalMode] = useState(null);
   const [detailProtocolo, setDetailProtocolo] = useState(null);
@@ -66,9 +42,37 @@ export default function Protocolos() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const { notification, showSuccess, clear } = useToast();
 
+  // GET /api/v1/protocolos
+  // `ehValida` descarta respostas de requisições antigas: se o usuário
+  // trocar o filtro rápido, a resposta lenta da anterior não sobrescreve
+  // a mais recente.
+  const carregarProtocolos = useCallback(
+    async (ehValida = () => true) => {
+      setCarregando(true);
+      setErroCarregamento(null);
+      try {
+        const resposta = await listarProtocolos({
+          status: filtroStatus || undefined,
+          limite: 50,
+        });
+        if (ehValida()) setProtocolos(resposta.dados);
+      } catch (error) {
+        if (ehValida()) setErroCarregamento(error.message);
+      } finally {
+        if (ehValida()) setCarregando(false);
+      }
+    },
+    [filtroStatus]
+  );
+
   useEffect(() => {
-    localStorage.setItem('hackgov_protocolos', JSON.stringify(protocolos));
-  }, [protocolos]);
+    let ativo = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- busca de dados na montagem/troca de filtro
+    carregarProtocolos(() => ativo);
+    return () => {
+      ativo = false;
+    };
+  }, [carregarProtocolos]);
 
   const renderCheckpoints = (progresso) => (
     <div className="relative flex items-center justify-between w-full max-w-md mx-auto mt-6 mb-2">
@@ -112,6 +116,7 @@ export default function Protocolos() {
   const resetForm = () => {
     setFormData(FORM_INICIAL);
     setFormErrors({});
+    setErroFormulario(null);
     setEditingId(null);
     setModalMode(null);
   };
@@ -119,6 +124,7 @@ export default function Protocolos() {
   const openCreateModal = () => {
     setFormData(FORM_INICIAL);
     setFormErrors({});
+    setErroFormulario(null);
     setEditingId(null);
     setModalMode('form');
   };
@@ -130,59 +136,79 @@ export default function Protocolos() {
       progresso: prot.progresso,
     });
     setFormErrors({});
+    setErroFormulario(null);
     setEditingId(prot.id);
     setModalMode('form');
   };
 
-  const handleSubmit = (e) => {
+  // POST /api/v1/protocolos  |  PUT /api/v1/protocolos/:id
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (enviando) return;
+
     const errors = validateForm();
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    const statusInfo = getStatusOpcao(Number(formData.progresso));
+    setEnviando(true);
+    setErroFormulario(null);
 
-    if (editingId) {
-      setProtocolos((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? {
-                ...p,
-                tipo: formData.tipo,
-                descricao: formData.descricao.trim(),
-                status: statusInfo.status,
-                progresso: statusInfo.value,
-                prazo: statusInfo.prazo,
-                corPrazo: statusInfo.corPrazo,
-              }
-            : p
-        )
-      );
-      showSuccess('Protocolo atualizado com sucesso.');
-    } else {
-      const novoProtocolo = {
-        id: gerarIdProtocolo(),
-        tipo: formData.tipo,
-        descricao: formData.descricao.trim(),
-        data: formatarDataHoje(),
-        status: statusInfo.status,
-        progresso: statusInfo.value,
-        prazo: statusInfo.prazo,
-        corPrazo: statusInfo.corPrazo,
-      };
-      setProtocolos((prev) => [novoProtocolo, ...prev]);
-      showSuccess(`Protocolo ${novoProtocolo.id} criado com sucesso.`);
+    try {
+      if (editingId) {
+        await atualizarProtocolo(editingId, {
+          tipo: formData.tipo,
+          descricao: formData.descricao.trim(),
+          progresso: Number(formData.progresso),
+        });
+        showSuccess('Protocolo atualizado com sucesso.');
+      } else {
+        const criado = await criarProtocolo({
+          tipo: formData.tipo,
+          descricao: formData.descricao.trim(),
+        });
+        showSuccess(`Protocolo ${criado.id} criado com sucesso.`);
+      }
+      resetForm();
+      await carregarProtocolos();
+    } catch (error) {
+      // Erros de validação do servidor vêm em error.details (campo + mensagem)
+      if (error.details?.length) {
+        setFormErrors(
+          error.details.reduce((acc, d) => ({ ...acc, [d.campo]: d.mensagem }), {})
+        );
+      }
+      setErroFormulario(error.message);
+    } finally {
+      setEnviando(false);
     }
-
-    resetForm();
   };
 
-  const handleConfirmDelete = () => {
+  // PATCH /api/v1/protocolos/:id/status — só o atendente pode tramitar
+  const handleTramitar = async (prot, progresso) => {
+    try {
+      const atualizado = await alterarStatus(prot.id, progresso);
+      showSuccess(`Protocolo ${prot.id} movido para "${atualizado.status}".`);
+      setDetailProtocolo(null);
+      await carregarProtocolos();
+    } catch (error) {
+      setErroCarregamento(error.message);
+    }
+  };
+
+  // DELETE /api/v1/protocolos/:id
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setProtocolos((prev) => prev.filter((p) => p.id !== deleteTarget.id));
-    showSuccess(`Protocolo ${deleteTarget.id} excluído com sucesso.`);
-    if (detailProtocolo?.id === deleteTarget.id) setDetailProtocolo(null);
+    const alvo = deleteTarget;
     setDeleteTarget(null);
+
+    try {
+      await excluirProtocolo(alvo.id);
+      showSuccess(`Protocolo ${alvo.id} excluído com sucesso.`);
+      if (detailProtocolo?.id === alvo.id) setDetailProtocolo(null);
+      await carregarProtocolos();
+    } catch (error) {
+      setErroCarregamento(error.message);
+    }
   };
 
   const updateField = (field, value) => {
@@ -200,10 +226,14 @@ export default function Protocolos() {
       <Toast notification={notification} onClose={clear} />
 
       <main className="max-w-4xl mx-auto px-4 py-10">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Acompanhamento de Protocolos</h1>
-            <p className="text-gray-500 text-sm mt-1">Transparência total no fluxo de serviços públicos</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {ehAtendente
+                ? 'Painel do atendente: todos os protocolos abertos na plataforma'
+                : 'Transparência total no fluxo de serviços públicos'}
+            </p>
           </div>
           <button
             onClick={openCreateModal}
@@ -213,13 +243,70 @@ export default function Protocolos() {
           </button>
         </div>
 
-        {protocolos.length === 0 ? (
+        {/* Filtro server-side: GET /protocolos?status=... */}
+        <div className="flex flex-wrap items-center gap-2 mb-8">
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1">Filtrar</span>
+          {['', ...STATUS_OPCOES.map((o) => o.status)].map((valor) => (
+            <button
+              key={valor || 'todos'}
+              type="button"
+              onClick={() => setFiltroStatus(valor)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                filtroStatus === valor
+                  ? 'bg-gov-orange text-white border-gov-orange'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gov-orange hover:text-gov-orange'
+              }`}
+            >
+              {valor || 'Todos'}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={carregarProtocolos}
+            className="ml-auto text-xs font-medium text-gray-500 hover:text-gov-orange flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+            title="Recarregar da API"
+          >
+            <RefreshCw size={14} className={carregando ? 'animate-spin' : ''} /> Atualizar
+          </button>
+        </div>
+
+        {/* Estado: carregando */}
+        {carregando && (
+          <div className="bg-white p-10 rounded-2xl border border-gray-100 text-center">
+            <Loader2 size={32} className="text-gov-orange mx-auto mb-3 animate-spin" />
+            <p className="text-gray-500 text-sm">Carregando protocolos...</p>
+          </div>
+        )}
+
+        {/* Estado: falha */}
+        {!carregando && erroCarregamento && (
+          <div className="space-y-3">
+            <StatusMessage type="error" message={erroCarregamento} />
+            <button
+              type="button"
+              onClick={carregarProtocolos}
+              className="text-sm font-bold text-gov-orange hover:underline"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {/* Estado: sucesso, porém sem registros */}
+        {!carregando && !erroCarregamento && protocolos.length === 0 && (
           <div className="bg-white p-10 rounded-2xl border border-gray-100 text-center">
             <FileText size={40} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 font-medium">Nenhum protocolo cadastrado</p>
-            <p className="text-sm text-gray-400 mt-1">Clique em &quot;Abrir novo protocolo&quot; para registrar sua primeira solicitação.</p>
+            <p className="text-gray-600 font-medium">Nenhum protocolo encontrado</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {filtroStatus
+                ? 'Nenhum protocolo neste status. Tente outro filtro.'
+                : 'Clique em "Abrir novo protocolo" para registrar sua primeira solicitação.'}
+            </p>
           </div>
-        ) : (
+        )}
+
+        {/* Estado: sucesso com dados */}
+        {!carregando && !erroCarregamento && protocolos.length > 0 && (
           <div className="space-y-6">
             {protocolos.map((prot) => (
               <div
@@ -261,7 +348,7 @@ export default function Protocolos() {
                     <div>
                       <h3 className="font-bold text-gray-800 text-lg">Protocolo {prot.id}</h3>
                       <p className="text-sm text-gray-500 mt-0.5">{prot.tipo}</p>
-                      <p className="text-xs text-gray-400 mt-1">Aberto em {prot.data}</p>
+                      <p className="text-xs text-gray-400 mt-1">Aberto em {formatarData(prot.abertoEm)}</p>
                       {prot.descricao && (
                         <p className="text-xs text-gray-500 mt-2 line-clamp-2 max-w-md">{prot.descricao}</p>
                       )}
@@ -273,6 +360,19 @@ export default function Protocolos() {
                 </div>
 
                 {renderCheckpoints(prot.progresso)}
+
+                {/* Tramitação rápida: exclusiva do atendente (RBAC) */}
+                {ehAtendente && prot.progresso < 100 && (
+                  <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-50">
+                    <button
+                      type="button"
+                      onClick={() => handleTramitar(prot, prot.progresso === 33 ? 66 : 100)}
+                      className="text-xs font-bold text-white bg-gov-green px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                      {prot.progresso === 33 ? 'Iniciar análise' : 'Concluir protocolo'}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -294,6 +394,7 @@ export default function Protocolos() {
                 label="Tipo de Protocolo"
                 hint="Selecione a categoria que melhor descreve sua solicitação. Isso direciona o atendimento ao setor responsável."
                 required
+                error={formErrors.tipo}
               >
                 <select
                   value={formData.tipo}
@@ -306,11 +407,12 @@ export default function Protocolos() {
                 </select>
               </FormField>
 
-              {isEditing && (
+              {isEditing && ehAtendente && (
                 <FormField
                   label="Status do Protocolo"
                   hint="Atualize o andamento conforme o protocolo avança no fluxo de atendimento."
                   required
+                  error={formErrors.progresso}
                 >
                   <select
                     value={formData.progresso}
@@ -340,14 +442,21 @@ export default function Protocolos() {
                 />
               </FormField>
 
-              {!isEditing && (
+              {erroFormulario && <StatusMessage type="error" message={erroFormulario} />}
+
+              {!isEditing && !erroFormulario && (
                 <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
                   Após o envio, um número de protocolo será gerado automaticamente e você poderá acompanhar o andamento nesta página.
                 </p>
               )}
 
-              <button type="submit" className="w-full bg-gov-green text-white font-bold py-3.5 rounded-xl hover:bg-green-600 transition shadow-md duration-200">
-                {isEditing ? 'Salvar Alterações' : 'Enviar Formulário'}
+              <button
+                type="submit"
+                disabled={enviando}
+                className="w-full bg-gov-green text-white font-bold py-3.5 rounded-xl hover:bg-green-600 transition shadow-md duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {enviando && <Loader2 size={18} className="animate-spin" />}
+                {enviando ? 'Enviando...' : isEditing ? 'Salvar Alterações' : 'Enviar Formulário'}
               </button>
             </form>
           </div>
@@ -378,8 +487,14 @@ export default function Protocolos() {
               </div>
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Data de abertura</p>
-                <p className="text-gray-700 mt-1">{detailProtocolo.data}</p>
+                <p className="text-gray-700 mt-1">{formatarData(detailProtocolo.abertoEm)}</p>
               </div>
+              {detailProtocolo.concluidoEm && (
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Concluído em</p>
+                  <p className="text-gray-700 mt-1">{formatarData(detailProtocolo.concluidoEm)}</p>
+                </div>
+              )}
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</p>
                 <p className="text-gray-600 mt-1 text-sm leading-relaxed">

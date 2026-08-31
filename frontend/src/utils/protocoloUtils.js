@@ -26,9 +26,16 @@ export function gerarIdProtocolo() {
 }
 
 export function formatarDataHoje() {
-  const hoje = new Date();
-  const dia = String(hoje.getDate()).padStart(2, '0');
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-  const ano = hoje.getFullYear();
-  return `${dia}/${mes}/${ano}`;
+  return formatarData(new Date());
+}
+
+// A API devolve datas em ISO 8601 (padrão REST); a formatação para
+// dd/mm/aaaa é responsabilidade da camada de apresentação.
+export function formatarData(valor) {
+  if (!valor) return '—';
+  const data = valor instanceof Date ? valor : new Date(valor);
+  if (Number.isNaN(data.getTime())) return '—';
+  const dia = String(data.getDate()).padStart(2, '0');
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}/${data.getFullYear()}`;
 }
