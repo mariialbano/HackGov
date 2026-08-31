@@ -27,7 +27,12 @@ HackGov/
 │       ├── context/     # Contexto de autenticação (sessão)
 │       ├── pages/       # Páginas (Login, Dashboard, Protocolos...)
 │       └── utils/       # Validadores e utilitários
-└── backend/         # API Node.js/Express (login + chatbot IA)
+└── backend/         # API RESTful (Node.js + Express)
+    └── src/
+        ├── app.js         # middlewares e montagem das rotas
+        ├── store.js       # camada de dados
+        ├── middlewares/   # autenticação, RBAC, tratamento de erros
+        └── routes/        # um arquivo por recurso da API
 ```
 
 ## Como rodar
@@ -67,24 +72,32 @@ Acesse o endereço exibido pelo Vite (geralmente `http://localhost:5173`).
 | Cidadão   | 529.982.247-25 | Cidadao@123   | Funcionalidades gerais          |
 | Atendente | 153.509.460-56 | Atendente@123 | Geral + Comparativos (restrito) |
 
-## APIs (reais e simuladas)
+## API RESTful
 
-O sistema combina dois tipos de integração, com o mesmo **contrato de
-integração** em ambos:
+Todo o sistema é servido por uma API REST versionada em
+`http://localhost:3001/api/v1`. Com o backend rodando, `GET /api/v1` lista
+todos os endpoints disponíveis.
 
-- **APIs reais (backend Express):**
-  - `POST /api/login` — autenticação.
-    Sucesso: `{ success, token, user: { nome, cpf, perfil } }`.
-    Falha: HTTP `400/401` com `{ error: "mensagem amigável" }`.
-  - `POST /api/chat` — chatbot via API Gemini, com validação e sanitização
-    da mensagem no servidor (HTTP `400` para entradas inválidas).
-- **APIs simuladas (frontend, `src/api/`):** os demais serviços (feedback,
-  dados de indicadores etc.) usam `simulateRequest`, que reproduz o
-  comportamento de uma API real — latência (~800 ms), resposta de sucesso
-  estruturada e erros previsíveis com mensagem amigável. As telas tratam os
-  estados de **carregando, sucesso e falha** como fariam com endpoints
-  reais, e a troca pela API definitiva exige apenas substituir o módulo do
-  serviço.
+| Recurso | Endpoints |
+|---|---|
+| **Autenticação** | `POST /auth/login` · `GET /auth/me` · `POST /auth/logout` |
+| **Protocolos** | `GET`/`POST` `/protocolos` · `GET`/`PUT`/`DELETE` `/protocolos/:id` · `PATCH /protocolos/:id/status` · `GET /protocolos/estatisticas` |
+| **Metas** | `GET`/`POST` `/metas` · `GET`/`PUT`/`DELETE` `/metas/:id` · `PATCH /metas/:id/aporte` |
+| **Feedbacks** | `POST /feedbacks` · `GET /feedbacks` (atendente) |
+| **Chat (IA)** | `POST /chat` |
+| **Auditoria** | `GET /auditoria` (atendente) |
+
+Boas práticas aplicadas: versionamento no caminho, métodos HTTP semânticos,
+códigos de status corretos (`200`, `201` + `Location`, `204`, `400`, `401`,
+`403`, `404`, `409`, `429`), envelope de erro único com detalhamento por
+campo, paginação, filtros e *rate limiting*.
+
+O React consome a API por uma camada de serviços isolada
+(`frontend/src/api/`): `apiClient.js` concentra URL base, envio do token e
+normalização de erros; cada recurso tem seu próprio serviço. As telas tratam
+explicitamente os três estados de integração — **carregando, sucesso e
+falha** — e devolvem os erros de validação do servidor para os campos do
+formulário que os originaram.
 
 ## Segurança da informação
 
