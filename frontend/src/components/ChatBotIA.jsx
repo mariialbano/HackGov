@@ -1,15 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageSquare, X, Send, Loader2, Star } from 'lucide-react';
 import { sendMessage } from '../api/chatService';
 
 export default function ChatbotIA({ onOpenFeedback }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { text: "Olá! Sou o Assistente Virtual do HackGov VidaReal. Como posso ajudá-lo hoje?", sender: 'bot' }
+    {
+      text:
+        'Olá! Posso ajudar você a usar a plataforma e tirar dúvidas sobre finanças. ' +
+        'O que você precisa?',
+      sender: 'bot',
+    },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const { pathname } = useLocation(); // tela atual, enviada como contexto
 
   // Scroll automático para a última mensagem
   useEffect(() => {
@@ -25,10 +32,15 @@ export default function ChatbotIA({ onOpenFeedback }) {
     setLoading(true);
 
     try {
-      const data = await sendMessage(userMessage.text);
+      const data = await sendMessage(userMessage.text, { pagina: pathname });
       setMessages(prev => [...prev, { text: data.reply, sender: 'bot' }]);
-    } catch {
-      setMessages(prev => [...prev, { text: "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.", sender: 'bot' }]);
+    } catch (error) {
+      // Mostra o motivo real (servidor fora do ar, IA lenta) em vez de
+      // uma mensagem genérica que não ajuda o cidadão.
+      setMessages(prev => [...prev, {
+        text: error.message || 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
+        sender: 'bot',
+      }]);
     } finally {
       setLoading(false);
     }
@@ -74,7 +86,8 @@ export default function ChatbotIA({ onOpenFeedback }) {
           <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`p-3 rounded-lg max-w-[85%] text-sm ${msg.sender === 'user' ? 'bg-gov-orange text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border shadow-xs'}`}>
+                {/* whitespace-pre-line preserva as quebras de linha do texto */}
+                <div className={`p-3 rounded-lg max-w-[85%] text-sm whitespace-pre-line ${msg.sender === 'user' ? 'bg-gov-orange text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border shadow-xs'}`}>
                   {msg.text}
                 </div>
               </div>
