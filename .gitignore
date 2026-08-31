@@ -10,3 +10,4 @@ frontend/dist/
 # IGNORAR ARQUIVOS SECRETOS (SEGURANÇA DA API KEY)
 backend/.env
 .env
+.idea/
