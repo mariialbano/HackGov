@@ -1,12 +1,295 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   VidaReal — Sistema de Design
+
+   Identidade institucional herdada do gov.br (laranja de ação, verde de
+   confirmação), reconstruída sobre um sistema real: escala tipográfica,
+   rampa de neutros, elevação e foco acessível.
+   ========================================================================== */
+
 @theme {
-  /* Registrando as cores customizadas perfeitamente para o Tailwind v4 */
+  /* --- Marca ------------------------------------------------------------ */
+  /* O laranja vivo é cor de PREENCHIMENTO (botões, selos, ícones sobre
+     fundo claro). Sobre branco ele atinge apenas 2,4:1 de contraste, por
+     isso texto em laranja usa a variante "ink", que passa em AA. */
+  --color-brand: #ff8101;
+  --color-brand-strong: #e56f00;
+  --color-brand-ink: #9a4a00;
+  --color-brand-soft: #fff4e8;
+  --color-brand-line: #ffd9b0;
+
+  /* Tinta para texto/icone SOBRE o preenchimento laranja. O laranja e o
+     mesmo nos dois temas, entao esta cor tambem nao pode inverter: se
+     seguisse a rampa de tinta, no escuro viraria quase branco sobre
+     laranja (2,3:1). Fixa em #16130f ela mantem 7,4:1 sempre. */
+  --color-on-brand: #16130f;
+
+  /* Tinta sobre os preenchimentos semanticos (verde, azul, vermelho).
+     No claro esses fundos sao escuros e pedem branco; no escuro eles
+     clareiam para se destacar do fundo e ai o branco cai para 2,8:1.
+     Por isso o valor inverte junto com o tema (bloco data-theme). */
+  --color-on-fill: #ffffff;
+
+  /* Verde de confirmação e progresso concluído */
+  --color-positive: #278553;
+  --color-positive-ink: #1c6b42;
+  --color-positive-soft: #eaf7f0;
+
+  /* Azul institucional: etapas iniciais, informação neutra */
+  --color-info: #1d6fd0;
+  --color-info-ink: #14538f;
+  --color-info-soft: #eaf2fd;
+
+  /* Vermelho: erro e ações destrutivas */
+  --color-danger: #cf3131;
+  --color-danger-ink: #a12020;
+  --color-danger-soft: #fdeeee;
+
+  /* --- Neutros ---------------------------------------------------------- */
+  /* Rampa levemente quente, para conviver com o laranja sem cinza "morto" */
+  --color-ink-900: #16130f;
+  --color-ink-800: #2b2621;
+  --color-ink-700: #443c34;
+  --color-ink-600: #635a50;
+  --color-ink-500: #786f65;
+  --color-ink-400: #a89e93;
+  --color-ink-300: #cdc5bb;
+  --color-ink-200: #e6e0d8;
+  --color-ink-100: #f2eee9;
+  --color-ink-050: #faf8f5;
+
+  --color-surface: #ffffff;
+  --color-canvas: #f7f5f2;
+
+  /* Superfície institucional do login: escura nos DOIS temas, por decisão
+     de composição. Por isso não usa a rampa de tinta, que se inverte. */
+  --color-panel: #16130f;
+  --color-panel-strong: #f7f5f2;
+  --color-panel-muted: #cdc5bb;
+  --color-panel-dim: #a89e93;
+
+  /* Compatibilidade com as classes já usadas no projeto */
   --color-gov-orange: #ff8101;
-  --color-gov-green: #51ba7e;
-  --color-gov-bg: #f9fafb;
+  --color-gov-green: #278553;
+  --color-gov-bg: #f7f5f2;
+
+  /* --- Tipografia ------------------------------------------------------- */
+  --font-display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+
+  /* --- Elevação --------------------------------------------------------- */
+  /* Sombras com deslocamento e desfoque, tingidas com o neutro quente —
+     nunca um halo preto sem direção. */
+  --shadow-raised: 0 1px 2px rgb(43 38 33 / 0.06), 0 1px 3px rgb(43 38 33 / 0.05);
+  --shadow-lifted: 0 2px 4px rgb(43 38 33 / 0.05), 0 6px 16px -4px rgb(43 38 33 / 0.10);
+  --shadow-overlay: 0 8px 16px -6px rgb(43 38 33 / 0.14), 0 24px 48px -12px rgb(43 38 33 / 0.20);
+
+  /* --- Ritmo ------------------------------------------------------------ */
+  --radius-card: 14px;
+  --radius-field: 10px;
+
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body {
-  background-color: var(--color-gov-bg);
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink-800);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv05" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Titulos nao herdam a cor do container: esta regra fixa a tinta.
+     Cabecalho sobre fundo colorido precisa declarar a cor na propria
+     tag (ex.: text-on-brand), senao volta para a tinta padrao. */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--color-ink-900);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Números alinhados em colunas: essencial em valores financeiros */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Foco visível e consistente para navegação por teclado */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-line);
+    color: var(--color-ink-900);
+  }
+
+  /* Respeita quem configurou o sistema para reduzir animações */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Utilitários do sistema
+   ========================================================================== */
+
+@layer components {
+  /* Medida de leitura confortável para blocos de texto corrido */
+  .measure {
+    max-width: 68ch;
+  }
+
+  /* Entrada única e sutil de conteúdo — um momento, não efeitos espalhados */
+  @keyframes surface-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .surface-in {
+    animation: surface-in 0.5s var(--ease-out-soft) both;
+  }
+
+  /* Pontos de "digitando": pulsação suave, sem o salto do bounce */
+  @keyframes typing-dot {
+    0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+    30%           { opacity: 1;    transform: translateY(-3px); }
+  }
+
+  .typing-dot {
+    animation: typing-dot 1.2s var(--ease-out-soft) infinite;
+  }
+
+  /* VLibras desativado por padrão.
+     A partir da versao 7 o plugin monta o proprio elemento no body, com
+     shadow DOM, e o faz sozinho no carregamento da pagina. Nao da para
+     impedir a criacao: escondemos ate o cidadao ativar o recurso. */
+  #vlibras-access-wrapper {
+    display: none;
+  }
+
+  html.vlibras-ativo #vlibras-access-wrapper {
+    display: block;
+  }
+}
+
+/* ==========================================================================
+   Tema escuro
+
+   Os utilitários do Tailwind v4 referenciam os tokens por var(), então
+   redefinir as variáveis já reveste a interface inteira.
+
+   O tema escuro é ESCOLHIDO, não uma inversão automática: cada passo foi
+   reescalado para manter sobre o novo fundo o mesmo contraste do tema claro.
+
+   Três estados: sem o atributo, segue a preferência do sistema;
+   data-theme="light" ou "dark" fixa a escolha do usuário.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  /* Tokens do tema escuro, aplicados por escolha explícita ou pelo sistema */
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --color-ink-900: #f7f5f2;
+    --color-ink-800: #e8e2da;
+    --color-ink-700: #d2cabf;
+    --color-ink-600: #b0a698;
+    --color-ink-500: #968b7d;
+    --color-ink-400: #7a7064;
+    --color-ink-300: #574f46;
+    --color-ink-200: #3a342d;
+    --color-ink-100: #2a2621;
+    --color-ink-050: #232019;
+
+    --color-surface: #1c1915;
+    --color-canvas: #131110;
+    --color-gov-bg: #131110;
+
+    --color-brand-strong: #ff9426;
+    --color-brand-ink: #ffa64d;
+    --color-brand-soft: #38220e;
+    --color-brand-line: #573719;
+
+    --color-on-fill: #16130f;
+
+    --color-positive: #37b06e;
+    --color-positive-ink: #74d9a2;
+    --color-positive-soft: #12301f;
+    --color-gov-green: #37b06e;
+
+    --color-info: #4c9cf0;
+    --color-info-ink: #8fc4f8;
+    --color-info-soft: #12253c;
+
+    --color-danger: #e5605f;
+    --color-danger-ink: #f2a09f;
+    --color-danger-soft: #3a1b1b;
+
+    /* No escuro a sombra sozinha não separa planos: ganha mais peso */
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.35);
+    --shadow-lifted: 0 2px 6px rgb(0 0 0 / 0.45), 0 8px 20px -6px rgb(0 0 0 / 0.55);
+    --shadow-overlay: 0 10px 20px -8px rgb(0 0 0 / 0.6), 0 28px 56px -16px rgb(0 0 0 / 0.7);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+      color-scheme: dark;
+      --color-ink-900: #f7f5f2;
+      --color-ink-800: #e8e2da;
+      --color-ink-700: #d2cabf;
+      --color-ink-600: #b0a698;
+      --color-ink-500: #968b7d;
+      --color-ink-400: #7a7064;
+      --color-ink-300: #574f46;
+      --color-ink-200: #3a342d;
+      --color-ink-100: #2a2621;
+      --color-ink-050: #232019;
+      --color-surface: #1c1915;
+      --color-canvas: #131110;
+      --color-gov-bg: #131110;
+      --color-brand-strong: #ff9426;
+      --color-brand-ink: #ffa64d;
+      --color-brand-soft: #38220e;
+      --color-brand-line: #573719;
+      --color-on-fill: #16130f;
+
+      --color-positive: #37b06e;
+      --color-positive-ink: #74d9a2;
+      --color-positive-soft: #12301f;
+      --color-gov-green: #37b06e;
+      --color-info: #4c9cf0;
+      --color-info-ink: #8fc4f8;
+      --color-info-soft: #12253c;
+      --color-danger: #e5605f;
+      --color-danger-ink: #f2a09f;
+      --color-danger-soft: #3a1b1b;
+      /* No escuro a sombra sozinha não separa planos: ganha mais peso */
+      --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.35);
+      --shadow-lifted: 0 2px 6px rgb(0 0 0 / 0.45), 0 8px 20px -6px rgb(0 0 0 / 0.55);
+      --shadow-overlay: 0 10px 20px -8px rgb(0 0 0 / 0.6), 0 28px 56px -16px rgb(0 0 0 / 0.7);
+  }
 }

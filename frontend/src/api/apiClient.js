@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------
-// Cliente HTTP da API HackGov (módulo próprio, isolado das telas)
+// Cliente HTTP da API VidaReal (módulo próprio, isolado das telas)
 //
 // Centraliza tudo que é comum a qualquer chamada:
 //   - URL base e versão da API;

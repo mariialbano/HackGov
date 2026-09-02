@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { AuthContext } from './contextoAuth';
 import * as authService from '../api/authService';
 
 // Contexto de autenticação (Segurança da Informação)
@@ -7,7 +8,6 @@ import * as authService from '../api/authService';
 // reduzindo o risco de sessão esquecida em computador compartilhado.
 // Além disso, a sessão expira após período de inatividade (US06).
 
-const AuthContext = createContext(null);
 
 const SESSION_KEY = 'hackgov.session';
 const ACTIVITY_KEY = 'hackgov.lastActivity';
@@ -26,13 +26,28 @@ function carregarSessao() {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(carregarSessao);
 
-  const login = async (credentials) => {
-    const result = await authService.login(credentials);
+  // Guarda a sessão devolvida pelo servidor (login ou cadastro).
+  const abrirSessao = (result) => {
     const novaSessao = { user: result.user, token: result.token };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(novaSessao));
     sessionStorage.setItem(ACTIVITY_KEY, String(Date.now()));
     setSession(novaSessao);
     return result;
+  };
+
+  const login = async (credentials) => abrirSessao(await authService.login(credentials));
+
+  // O cadastro já entra com a conta criada, sem pedir login em seguida.
+  const cadastrar = async (dados) => abrirSessao(await authService.cadastrar(dados));
+
+  // Atualiza os dados exibidos (navbar, saudação) após editar o perfil.
+  const atualizarUsuario = (dadosUsuario) => {
+    setSession((atual) => {
+      if (!atual) return atual;
+      const atualizada = { ...atual, user: { ...atual.user, ...dadosUsuario } };
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(atualizada));
+      return atualizada;
+    });
   };
 
   const logout = () => {
@@ -72,16 +87,10 @@ export function AuthProvider({ children }) {
     user: session?.user ?? null,
     isAuthenticated: Boolean(session),
     login,
+    cadastrar,
+    atualizarUsuario,
     logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth deve ser usado dentro de <AuthProvider>.');
-  }
-  return ctx;
 }

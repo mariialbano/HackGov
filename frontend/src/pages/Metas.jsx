@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import PageHeader from '../components/PageHeader';
+import Button from '../components/Button';
 import FormField from '../components/FormField';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
@@ -233,7 +235,7 @@ export default function Metas() {
     setIsEditModalOpen(true);
   };
 
-  const inputMetaClass = 'w-full pl-9 pr-4 py-3 border-2 border-gray-100 rounded-xl outline-none focus:border-gov-orange transition-all';
+  const inputMetaClass = 'w-full pl-9 pr-4 py-3 border-2 border-ink-200 rounded-[var(--radius-field)] outline-none focus:border-brand transition-all';
 
   const renderSeletorCategoria = ({ tipo, setTipo, custom, setCustom, errors, setErrors, hint }) => (
     <>
@@ -248,10 +250,10 @@ export default function Metas() {
                 setCustom('');
                 if (errors.tipoCustom) setErrors((prev) => ({ ...prev, tipoCustom: undefined }));
               }}
-              className={`p-3 text-xs font-bold rounded-xl border-2 transition-all ${
+              className={`p-3 text-xs font-bold rounded-[var(--radius-field)] border-2 transition-all ${
                 tipo === item
-                  ? 'border-gov-orange bg-orange-50 text-gov-orange shadow-sm'
-                  : 'border-gray-100 text-gray-500 hover:bg-gray-50'
+                  ? 'border-brand bg-brand-soft text-brand-ink shadow-raised'
+                  : 'border-ink-200 text-ink-500 hover:bg-ink-050'
               }`}
             >
               {item}
@@ -260,10 +262,10 @@ export default function Metas() {
           <button
             type="button"
             onClick={() => setTipo(TIPO_OUTROS)}
-            className={`col-span-2 p-3 text-xs font-bold rounded-xl border-2 transition-all ${
+            className={`col-span-2 p-3 text-xs font-bold rounded-[var(--radius-field)] border-2 transition-all ${
               tipo === TIPO_OUTROS
-                ? 'border-gov-orange bg-orange-50 text-gov-orange shadow-sm'
-                : 'border-gray-100 text-gray-500 hover:bg-gray-50'
+                ? 'border-brand bg-brand-soft text-brand-ink shadow-raised'
+                : 'border-ink-200 text-ink-500 hover:bg-ink-050'
             }`}
           >
             Outros
@@ -286,7 +288,7 @@ export default function Metas() {
               if (errors.tipoCustom) setErrors((prev) => ({ ...prev, tipoCustom: undefined }));
             }}
             placeholder="Ex: Reforma da casa, Casamento..."
-            className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl outline-none focus:border-gov-orange transition-all"
+            className="w-full px-4 py-3 border-2 border-ink-200 rounded-[var(--radius-field)] outline-none focus:border-brand transition-all"
           />
         </FormField>
       )}
@@ -302,7 +304,7 @@ export default function Metas() {
         error={errors.objetivo}
       >
         <div className="relative">
-          <DollarSign className="absolute left-3 top-3 text-gray-400" size={16} />
+          <DollarSign className="absolute left-3 top-3 text-ink-500" size={16} />
           <input
             type="number"
             min="0"
@@ -325,7 +327,7 @@ export default function Metas() {
         error={errors.prazo}
       >
         <div className="relative">
-          <Calendar className="absolute left-3 top-3 text-gray-400" size={16} />
+          <Calendar className="absolute left-3 top-3 text-ink-500" size={16} />
           <input
             type="number"
             min="1"
@@ -343,34 +345,25 @@ export default function Metas() {
   );
 
   return (
-    <div className="min-h-screen bg-gov-bg">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <Toast notification={notification} onClose={clear} />
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
-            <div className="bg-orange-100 p-2 rounded-lg text-gov-orange">
-              <Target size={28} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Suas Metas</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Planeje, acompanhe e gerencie seus objetivos financeiros</p>
-            </div>
-          </div>
-          <button
-            onClick={() => { setCreateErrors({}); setIsCreateModalOpen(true); }}
-            className="bg-gov-orange text-white px-5 py-2.5 rounded-xl hover:bg-orange-600 transition flex items-center gap-2 shadow-sm font-bold"
-          >
-            <Plus size={20} /> Nova Meta
-          </button>
-        </div>
+      <main className="mx-auto max-w-5xl px-4 py-10 pb-28 sm:px-6">
+        <PageHeader
+          title="Suas metas"
+          description="Planeje, acompanhe e gerencie seus objetivos financeiros."
+        >
+          <Button icon={Plus} onClick={() => { setCreateErrors({}); setIsCreateModalOpen(true); }}>
+            Nova meta
+          </Button>
+        </PageHeader>
 
         {metas.length === 0 ? (
-          <div className="bg-white p-10 rounded-2xl border border-gray-100 text-center">
-            <Target size={40} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 font-medium">Nenhuma meta cadastrada</p>
-            <p className="text-sm text-gray-400 mt-1">Crie sua primeira meta financeira para começar a planejar.</p>
+          <div className="bg-surface p-10 rounded-[var(--radius-card)] border border-ink-200 text-center">
+            <Target size={40} className="text-ink-300 mx-auto mb-3" />
+            <p className="text-ink-600 font-medium">Nenhuma meta cadastrada</p>
+            <p className="text-sm text-ink-500 mt-1">Crie sua primeira meta financeira para começar a planejar.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -382,15 +375,15 @@ export default function Metas() {
                 <div
                   key={meta.id}
                   onClick={() => openAddValor(meta)}
-                  className={`bg-white p-6 rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer group relative ${
-                    isConcluida ? 'border-green-200 bg-green-50/20' : 'border-gray-100'
+                  className={`bg-surface p-6 rounded-[var(--radius-card)] border shadow-raised hover:shadow-lifted transition-all cursor-pointer group relative ${
+                    isConcluida ? 'border-positive/30 bg-positive-soft/20' : 'border-ink-200'
                   }`}
                 >
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <button
                       type="button"
                       onClick={(e) => openEditMeta(meta, e)}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-1.5 text-ink-500 hover:text-info-ink hover:bg-info-soft rounded-lg transition-colors"
                       title="Editar meta"
                     >
                       <Pencil size={16} />
@@ -398,7 +391,7 @@ export default function Metas() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setDeleteTarget(meta); }}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1.5 text-ink-500 hover:text-danger hover:bg-danger-soft rounded-lg transition-colors"
                       title="Excluir meta"
                     >
                       <Trash2 size={16} />
@@ -406,12 +399,12 @@ export default function Metas() {
                   </div>
 
                   <div className="flex justify-between items-start mb-6 pr-16">
-                    <h3 className="font-bold text-gray-800 text-xl flex items-center gap-2">
+                    <h3 className="font-bold text-ink-900 text-xl flex items-center gap-2">
                       {meta.nome}
-                      {isConcluida && <CheckCircle2 className="text-gov-green" size={20} />}
+                      {isConcluida && <CheckCircle2 className="text-positive-ink" size={20} />}
                     </h3>
                     <span className={`text-xs font-semibold py-1.5 px-3 rounded-lg ${
-                      isConcluida ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      isConcluida ? 'bg-positive-soft text-positive-ink' : 'bg-ink-100 text-ink-600'
                     }`}>
                       {isConcluida ? 'Finalizada' : `Faltam ${meta.prazo}`}
                     </span>
@@ -419,34 +412,34 @@ export default function Metas() {
 
                   <div className="flex justify-between items-end mb-3">
                     <div>
-                      <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Acumulado</p>
-                      <p className={`text-lg font-bold ${isConcluida ? 'text-gov-green' : 'text-gray-700'}`}>
+                      <p className="text-xs text-ink-500 uppercase font-bold tracking-wider mb-1">Acumulado</p>
+                      <p className={`text-lg font-bold ${isConcluida ? 'text-positive-ink' : 'text-ink-800'}`}>
                         R$ {meta.atual.toLocaleString('pt-BR')}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Objetivo</p>
-                      <p className="text-sm font-medium text-gray-500">R$ {meta.objetivo.toLocaleString('pt-BR')}</p>
+                      <p className="text-xs text-ink-500 uppercase font-bold tracking-wider mb-1">Objetivo</p>
+                      <p className="text-sm font-medium text-ink-500">R$ {meta.objetivo.toLocaleString('pt-BR')}</p>
                     </div>
                   </div>
 
-                  <div className="w-full bg-gray-100 rounded-full h-3 mb-2">
+                  <div className="w-full bg-ink-100 rounded-full h-3 mb-2">
                     <div
-                      className="bg-gov-green h-3 rounded-full transition-all duration-700"
+                      className="bg-positive h-3 rounded-full transition-all duration-700"
                       style={{ width: `${percentual}%` }}
                     />
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <p className={`text-xs font-bold ${isConcluida ? 'text-gov-green' : 'text-gray-400'}`}>
+                    <p className={`text-xs font-bold ${isConcluida ? 'text-positive-ink' : 'text-ink-500'}`}>
                       {percentual}% concluído
                     </p>
                     {isConcluida ? (
-                      <p className="text-xs text-gov-green font-extrabold animate-bounce mt-1">
+                      <p className="mt-1 text-xs font-extrabold text-positive-ink">
                         Meta concluída! 🎉
                       </p>
                     ) : (
-                      <p className="text-xs text-gov-orange font-bold">
+                      <p className="text-xs text-brand-ink font-bold">
                         Faltam R$ {(meta.objetivo - meta.atual).toLocaleString('pt-BR')}
                       </p>
                     )}
@@ -460,9 +453,9 @@ export default function Metas() {
 
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="bg-gov-orange text-white p-6 flex justify-between items-center sticky top-0">
-              <h2 className="font-bold text-xl">Planejar Nova Meta</h2>
+          <div className="bg-surface rounded-3xl shadow-overlay w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="bg-brand text-on-brand p-6 flex justify-between items-center sticky top-0">
+              <h2 className="font-bold text-xl text-on-brand">Planejar Nova Meta</h2>
               <button type="button" onClick={handleCloseCreateModal}><X size={24} /></button>
             </div>
 
@@ -486,11 +479,11 @@ export default function Metas() {
                 setErrors: setCreateErrors,
               })}
 
-              <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <p className="text-xs text-ink-500 bg-ink-050 p-3 rounded-[var(--radius-field)] border border-ink-200">
                 Após criar, clique no card da meta para registrar depósitos e acompanhar o progresso.
               </p>
 
-              <button type="submit" className="w-full bg-gov-orange text-white font-bold py-4 rounded-2xl hover:bg-orange-600 transition shadow-lg">
+              <button type="submit" className="w-full bg-brand text-on-brand font-bold py-4 rounded-[var(--radius-card)] hover:bg-brand-strong transition shadow-lifted">
                 Criar Meta Financeira
               </button>
             </form>
@@ -500,17 +493,17 @@ export default function Metas() {
 
       {isEditModalOpen && selectedMeta && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+          <div className="bg-surface rounded-3xl shadow-overlay w-full max-w-sm overflow-hidden">
             <div className="p-6 border-b flex justify-between items-center">
-              <h2 className="font-bold text-lg text-gray-800">Registrar Depósito</h2>
-              <button type="button" onClick={handleCloseEditModal}><X size={24} className="text-gray-400" /></button>
+              <h2 className="font-bold text-lg text-ink-900">Registrar Depósito</h2>
+              <button type="button" onClick={handleCloseEditModal}><X size={24} className="text-ink-500" /></button>
             </div>
 
             <form className="p-8 space-y-6" onSubmit={handleAdicionarValor}>
               <div className="text-center">
-                <p className="text-sm text-gray-500 mb-1">Adicionar valor à meta</p>
-                <p className="font-bold text-gov-orange text-xl">{selectedMeta.nome}</p>
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-sm text-ink-500 mb-1">Adicionar valor à meta</p>
+                <p className="font-bold text-brand-ink text-xl">{selectedMeta.nome}</p>
+                <p className="text-xs text-ink-500 mt-2">
                   Acumulado: R$ {selectedMeta.atual.toLocaleString('pt-BR')} de R$ {selectedMeta.objetivo.toLocaleString('pt-BR')}
                 </p>
               </div>
@@ -522,7 +515,7 @@ export default function Metas() {
                 error={editErrors.valorAdicional}
               >
                 <div className="relative">
-                  <span className="absolute left-4 top-4 font-bold text-gray-400">R$</span>
+                  <span className="absolute left-4 top-4 font-bold text-ink-500">R$</span>
                   <input
                     autoFocus
                     type="number"
@@ -534,14 +527,14 @@ export default function Metas() {
                       if (editErrors.valorAdicional) setEditErrors((prev) => ({ ...prev, valorAdicional: undefined }));
                     }}
                     placeholder="0,00"
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl outline-none focus:border-gov-green focus:bg-white transition-all text-2xl font-bold"
+                    className="w-full pl-12 pr-4 py-4 bg-ink-050 border-2 border-transparent rounded-[var(--radius-card)] outline-none focus:border-positive focus:bg-surface transition-all text-2xl font-bold"
                   />
                 </div>
               </FormField>
 
               <button
                 type="submit"
-                className="w-full bg-gov-green text-white font-bold py-4 rounded-2xl hover:bg-green-600 transition shadow-lg"
+                className="w-full bg-positive text-on-fill font-bold py-4 rounded-[var(--radius-card)] hover:bg-positive-ink transition shadow-lifted"
               >
                 Confirmar Entrada
               </button>
@@ -552,9 +545,9 @@ export default function Metas() {
 
       {isEditMetaModalOpen && selectedMeta && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="bg-gov-orange text-white p-6 flex justify-between items-center sticky top-0">
-              <h2 className="font-bold text-xl">Editar Meta</h2>
+          <div className="bg-surface rounded-3xl shadow-overlay w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="bg-brand text-on-brand p-6 flex justify-between items-center sticky top-0">
+              <h2 className="font-bold text-xl text-on-brand">Editar Meta</h2>
               <button type="button" onClick={handleCloseEditMetaModal}><X size={24} /></button>
             </div>
 
@@ -578,11 +571,11 @@ export default function Metas() {
                 setErrors: setEditMetaErrors,
               })}
 
-              <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <p className="text-xs text-ink-500 bg-ink-050 p-3 rounded-[var(--radius-field)] border border-ink-200">
                 O valor já acumulado (R$ {selectedMeta.atual.toLocaleString('pt-BR')}) será mantido.
               </p>
 
-              <button type="submit" className="w-full bg-gov-orange text-white font-bold py-4 rounded-2xl hover:bg-orange-600 transition shadow-lg">
+              <button type="submit" className="w-full bg-brand text-on-brand font-bold py-4 rounded-[var(--radius-card)] hover:bg-brand-strong transition shadow-lifted">
                 Salvar Alterações
               </button>
             </form>

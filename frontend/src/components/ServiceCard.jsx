@@ -1,26 +1,31 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
-export default function ServiceCard({ title, desc, icon: Icon, path, hasStatus }) {
+// Item de serviço do painel inicial.
+// A seta só aparece no hover: o cartão em repouso fica limpo, e o convite
+// à ação surge quando o cursor confirma a intenção.
+
+export default function ServiceCard({ title, desc, icon: Icon, path }) {
   return (
-    <Link 
+    <Link
       to={path}
-      className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group relative"
+      className="group flex items-start gap-4 rounded-[var(--radius-card)] border border-ink-200 bg-surface p-5 shadow-raised transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-brand-line hover:shadow-lifted"
     >
-      {/* Indicador visual de notificação (ponto verde) se houver status ativo */}
-      {hasStatus && (
-        <span className="absolute top-4 right-4 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gov-green opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-gov-green"></span>
-        </span>
-      )}
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] bg-brand-soft text-brand-ink transition-colors duration-200 group-hover:bg-brand group-hover:text-on-brand">
+        <Icon size={20} aria-hidden="true" />
+      </span>
 
-      <div className="bg-orange-50 w-12 h-12 rounded-lg flex items-center justify-center text-gov-orange mb-4 group-hover:bg-gov-orange group-hover:text-white transition-colors">
-        <Icon size={24} />
-      </div>
-      
-      <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 flex-1">{desc}</p>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="font-display text-[0.95rem] font-bold text-ink-900">{title}</span>
+          <ArrowRight
+            size={14}
+            className="shrink-0 text-brand opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
+            aria-hidden="true"
+          />
+        </span>
+        <span className="mt-1 block text-sm leading-relaxed text-ink-600">{desc}</span>
+      </span>
     </Link>
   );
 }

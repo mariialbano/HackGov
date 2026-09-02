@@ -1,21 +1,12 @@
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+
+// Faixa de estado da integração com a API: carregando, sucesso ou falha.
+// A cor nunca informa sozinha — o ícone e o texto carregam o significado.
 
 const variants = {
-  loading: {
-    icon: Loader2,
-    className: 'bg-blue-50 text-blue-700 border-blue-200',
-    spin: true,
-  },
-  success: {
-    icon: CheckCircle,
-    className: 'bg-green-50 text-green-700 border-green-200',
-    spin: false,
-  },
-  error: {
-    icon: AlertCircle,
-    className: 'bg-red-50 text-red-700 border-red-200',
-    spin: false,
-  },
+  loading: { icon: Loader2, className: 'bg-info-soft text-info-ink border-info/25', spin: true },
+  success: { icon: CheckCircle2, className: 'bg-positive-soft text-positive-ink border-positive/25', spin: false },
+  error: { icon: AlertCircle, className: 'bg-danger-soft text-danger-ink border-danger/25', spin: false },
 };
 
 export default function StatusMessage({ type, message }) {
@@ -29,9 +20,17 @@ export default function StatusMessage({ type, message }) {
   return (
     <div
       role="status"
-      className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-medium ${variant.className}`}
+      className={[
+        'flex items-start gap-2.5 rounded-[var(--radius-field)] border px-3.5 py-3',
+        'text-sm font-medium leading-snug',
+        variant.className,
+      ].join(' ')}
     >
-      <Icon size={18} className={variant.spin ? 'animate-spin shrink-0' : 'shrink-0'} />
+      <Icon
+        size={17}
+        className={variant.spin ? 'mt-px shrink-0 animate-spin' : 'mt-px shrink-0'}
+        aria-hidden="true"
+      />
       <span>{message}</span>
     </div>
   );

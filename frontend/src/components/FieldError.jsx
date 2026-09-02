@@ -4,12 +4,9 @@ export default function FieldError({ message }) {
   if (!message) return null;
 
   return (
-    <div
-      role="alert"
-      className="flex items-center gap-1.5 mt-1.5 text-xs font-medium text-red-700"
-    >
-      <AlertCircle size={14} className="shrink-0" />
+    <p role="alert" className="flex items-start gap-1.5 text-xs font-medium text-danger-ink">
+      <AlertCircle size={14} className="mt-px shrink-0" aria-hidden="true" />
       <span>{message}</span>
-    </div>
+    </p>
   );
 }

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import PageHeader from '../components/PageHeader';
 import FormField from '../components/FormField';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
@@ -117,19 +118,19 @@ export default function Inflacao() {
   };
 
   return (
-    <div className="min-h-screen bg-gov-bg">
+    <div className="min-h-screen bg-canvas">
       <Navbar />
       <Toast notification={notification} onClose={clear} />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Simulador de Inflação</h1>
-          <p className="text-sm text-gray-500 mt-1">Projete o impacto da inflação no seu poder de compra ao longo do tempo</p>
-        </div>
+      <main className="mx-auto max-w-6xl px-4 py-10 pb-28 sm:px-6">
+        <PageHeader
+          title="Simulador de inflação"
+          description="Projete o impacto da inflação no seu poder de compra ao longo do tempo."
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-            <h2 className="font-bold text-lg mb-4 text-gov-orange">Calculadora</h2>
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="bg-surface p-6 rounded-[var(--radius-field)] shadow-raised border border-ink-200 h-fit">
+            <h2 className="font-bold text-lg mb-4 text-brand-ink">Calculadora</h2>
             <div className="space-y-4">
               <FormField
                 label="Valor Atual (R$)"
@@ -142,7 +143,7 @@ export default function Inflacao() {
                   step="0.01"
                   value={valor}
                   onChange={(e) => setValor(e.target.value)}
-                  className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none"
+                  className="w-full border p-2 rounded-lg focus:border-brand outline-none"
                 />
               </FormField>
 
@@ -156,7 +157,7 @@ export default function Inflacao() {
                   min="1"
                   value={anos}
                   onChange={(e) => setAnos(e.target.value)}
-                  className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none"
+                  className="w-full border p-2 rounded-lg focus:border-brand outline-none"
                 />
               </FormField>
 
@@ -171,7 +172,7 @@ export default function Inflacao() {
                   step="0.1"
                   value={inflacao}
                   onChange={(e) => setInflacao(e.target.value)}
-                  className="w-full border p-2 rounded-lg focus:border-gov-orange outline-none"
+                  className="w-full border p-2 rounded-lg focus:border-brand outline-none"
                 />
               </FormField>
 
@@ -179,14 +180,14 @@ export default function Inflacao() {
                 <button
                   type="button"
                   onClick={() => openSaveModal()}
-                  className="flex-1 bg-gov-green text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-green-600 transition font-medium text-sm"
+                  className="flex-1 bg-positive text-on-fill py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-positive-ink transition font-medium text-sm"
                 >
                   <Save size={16} /> Salvar
                 </button>
                 <button
                   type="button"
                   onClick={handleExportPdf}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition text-sm"
+                  className="flex-1 bg-ink-100 text-ink-800 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-ink-200 transition text-sm"
                 >
                   <Download size={16} /> Exportar PDF
                 </button>
@@ -196,20 +197,20 @@ export default function Inflacao() {
 
           <div className="md:col-span-2 space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-xl border shadow-sm">
-                <p className="text-sm text-gray-500">Poder de compra necessário</p>
-                <h3 className="text-2xl font-bold text-gov-orange">R$ {parseFloat(valorFuturo).toLocaleString('pt-BR')}</h3>
-                <p className="text-xs text-gray-400 mt-1">Valor equivalente após {anosNum} ano{anosNum !== 1 ? 's' : ''}</p>
+              <div className="bg-surface p-4 rounded-[var(--radius-field)] border shadow-raised">
+                <p className="text-sm text-ink-500">Poder de compra necessário</p>
+                <h3 className="text-2xl font-bold text-brand-ink">R$ {parseFloat(valorFuturo).toLocaleString('pt-BR')}</h3>
+                <p className="text-xs text-ink-500 mt-1">Valor equivalente após {anosNum} ano{anosNum !== 1 ? 's' : ''}</p>
               </div>
-              <div className="bg-white p-4 rounded-xl border shadow-sm">
-                <p className="text-sm text-gray-500">Crescimento Nominal</p>
-                <h3 className="text-2xl font-bold text-red-500">+ {crescimento}%</h3>
-                <p className="text-xs text-gray-400 mt-1">Aumento acumulado no período</p>
+              <div className="bg-surface p-4 rounded-[var(--radius-field)] border shadow-raised">
+                <p className="text-sm text-ink-500">Crescimento Nominal</p>
+                <h3 className="text-2xl font-bold text-danger">+ {crescimento}%</h3>
+                <p className="text-xs text-ink-500 mt-1">Aumento acumulado no período</p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border shadow-sm h-80">
-              <h3 className="font-bold mb-4 text-gray-700">Projeção do Custo de Vida</h3>
+            <div className="bg-surface p-6 rounded-[var(--radius-field)] border shadow-raised h-80">
+              <h3 className="font-bold mb-4 text-ink-800">Projeção do Custo de Vida</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -221,31 +222,31 @@ export default function Inflacao() {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
+            <div className="bg-surface p-6 rounded-[var(--radius-field)] border shadow-raised">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-gray-700">Simulações Salvas</h3>
-                <span className="text-xs text-gray-400">{simulacoes.length} registro{simulacoes.length !== 1 ? 's' : ''}</span>
+                <h3 className="font-bold text-ink-800">Simulações Salvas</h3>
+                <span className="text-xs text-ink-500">{simulacoes.length} registro{simulacoes.length !== 1 ? 's' : ''}</span>
               </div>
 
               {simulacoes.length === 0 ? (
                 <div className="text-center py-6">
-                  <FolderOpen size={32} className="text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Nenhuma simulação salva ainda.</p>
-                  <p className="text-xs text-gray-400 mt-1">Configure os parâmetros e clique em &quot;Salvar&quot; para guardar cenários.</p>
+                  <FolderOpen size={32} className="text-ink-300 mx-auto mb-2" />
+                  <p className="text-sm text-ink-500">Nenhuma simulação salva ainda.</p>
+                  <p className="text-xs text-ink-500 mt-1">Configure os parâmetros e clique em &quot;Salvar&quot; para guardar cenários.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {simulacoes.map((sim) => (
                     <div
                       key={sim.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 group hover:border-gov-orange/30 transition-colors"
+                      className="flex items-center justify-between p-4 bg-ink-050 rounded-[var(--radius-field)] border border-ink-200 group hover:border-brand/30 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-800 truncate">{sim.nome}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="font-bold text-ink-900 truncate">{sim.nome}</p>
+                        <p className="text-xs text-ink-500 mt-0.5">
                           R$ {sim.valor.toLocaleString('pt-BR')} · {sim.anos} anos · {sim.inflacao}% a.a.
                         </p>
-                        <p className="text-xs text-gov-orange font-medium mt-0.5">
+                        <p className="text-xs text-brand-ink font-medium mt-0.5">
                           Projeção: R$ {sim.valorFuturo.toLocaleString('pt-BR')}
                         </p>
                       </div>
@@ -253,7 +254,7 @@ export default function Inflacao() {
                         <button
                           type="button"
                           onClick={() => handleLoadSimulacao(sim)}
-                          className="p-2 text-gray-400 hover:text-gov-orange hover:bg-orange-50 rounded-lg transition-colors text-xs font-medium"
+                          className="p-2 text-ink-500 hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors text-xs font-medium"
                           title="Carregar simulação"
                         >
                           <FolderOpen size={16} />
@@ -261,7 +262,7 @@ export default function Inflacao() {
                         <button
                           type="button"
                           onClick={() => openSaveModal(sim)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-ink-500 hover:text-info-ink hover:bg-info-soft rounded-lg transition-colors"
                           title="Editar nome"
                         >
                           <Pencil size={16} />
@@ -269,7 +270,7 @@ export default function Inflacao() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(sim)}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-ink-500 hover:text-danger hover:bg-danger-soft rounded-lg transition-colors"
                           title="Excluir simulação"
                         >
                           <Trash2 size={16} />
@@ -286,9 +287,9 @@ export default function Inflacao() {
 
       {saveModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100">
-            <div className="bg-gov-orange text-white p-5 flex justify-between items-center">
-              <h2 className="font-bold text-lg">{editingSimulacao ? 'Editar Simulação' : 'Salvar Simulação'}</h2>
+          <div className="bg-surface rounded-[var(--radius-card)] shadow-overlay w-full max-w-sm overflow-hidden border border-ink-200">
+            <div className="bg-brand text-on-brand p-5 flex justify-between items-center">
+              <h2 className="font-bold text-lg text-on-brand">{editingSimulacao ? 'Editar Simulação' : 'Salvar Simulação'}</h2>
               <button type="button" onClick={() => setSaveModalOpen(false)} className="hover:opacity-80">
                 <X size={22} />
               </button>
@@ -308,19 +309,19 @@ export default function Inflacao() {
                     if (formErrors.nome) setFormErrors((prev) => ({ ...prev, nome: undefined }));
                   }}
                   placeholder="Ex: Projeção reserva de emergência"
-                  className="w-full border-2 border-gray-100 rounded-xl p-3 bg-gray-50 text-sm outline-none focus:border-gov-orange focus:bg-white transition-all"
+                  className="w-full border-2 border-ink-200 rounded-[var(--radius-field)] p-3 bg-ink-050 text-sm outline-none focus:border-brand focus:bg-surface transition-all"
                 />
               </FormField>
 
               {formErrors.geral && (
-                <p className="text-xs text-red-700 bg-red-50 p-3 rounded-xl border border-red-200">{formErrors.geral}</p>
+                <p className="text-xs text-danger-ink bg-danger-soft p-3 rounded-[var(--radius-field)] border border-danger/30">{formErrors.geral}</p>
               )}
 
-              <p className="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <p className="text-xs text-ink-500 bg-ink-050 p-3 rounded-[var(--radius-field)] border border-ink-200">
                 Parâmetros: R$ {valorNum.toLocaleString('pt-BR')} · {anosNum} anos · {inflacaoNum}% a.a. → R$ {parseFloat(valorFuturo).toLocaleString('pt-BR')}
               </p>
 
-              <button type="submit" className="w-full bg-gov-green text-white font-bold py-3 rounded-xl hover:bg-green-600 transition">
+              <button type="submit" className="w-full bg-positive text-on-fill font-bold py-3 rounded-[var(--radius-field)] hover:bg-positive-ink transition">
                 {editingSimulacao ? 'Atualizar' : 'Salvar Simulação'}
               </button>
             </form>

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Importando as Páginas
 import Login from './pages/Login';
+import Cadastro from './pages/Cadastro';
+import Perfil from './pages/Perfil';
 import Dashboard from './pages/Dashboard';
 import Protocolos from './pages/Protocolos';
 import Inflacao from './pages/Inflacao';
@@ -26,9 +28,11 @@ function App() {
         <Routes>
           {/* Rota inicial: Tela de Login */}
           <Route path="/" element={<Login />} />
+          <Route path="/cadastro" element={<Cadastro />} />
 
           {/* Rotas internas: exigem usuário autenticado */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
           <Route path="/protocolos" element={<ProtectedRoute><Protocolos /></ProtectedRoute>} />
           <Route path="/inflacao" element={<ProtectedRoute><Inflacao /></ProtectedRoute>} />
           <Route path="/metas" element={<ProtectedRoute><Metas /></ProtectedRoute>} />

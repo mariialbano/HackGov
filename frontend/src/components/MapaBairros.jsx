@@ -41,6 +41,28 @@ function CentralizarNoBairro({ posicao }) {
   return null;
 }
 
+// O Leaflet calcula o tamanho do mapa na montagem. Se o contêiner ainda
+// estava crescendo naquele instante, sobram faixas cinzas — invalidateSize
+// recalcula, e o observer cobre também a troca de tamanho da janela.
+function AjustarAoContainer() {
+  const mapa = useMap();
+
+  useEffect(() => {
+    const recalcular = () => mapa.invalidateSize();
+    const id = setTimeout(recalcular, 0);
+
+    const observador = new ResizeObserver(recalcular);
+    observador.observe(mapa.getContainer());
+
+    return () => {
+      clearTimeout(id);
+      observador.disconnect();
+    };
+  }, [mapa]);
+
+  return null;
+}
+
 export default function MapaBairros({ bairros, bairroSelecionado, onSelecionarBairro }) {
   const atual = bairros.find((b) => b.nome === bairroSelecionado) ?? bairros[0];
 
@@ -50,7 +72,7 @@ export default function MapaBairros({ bairros, bairroSelecionado, onSelecionarBa
       zoom={14}
       scrollWheelZoom={false}
       style={{ height: '100%', width: '100%' }}
-      className="rounded-xl z-0"
+      className="rounded-[var(--radius-field)] z-0"
     >
       {/* Camada de mapa aberta — atribuição obrigatória pela licença do OSM */}
       <TileLayer
@@ -58,6 +80,7 @@ export default function MapaBairros({ bairros, bairroSelecionado, onSelecionarBa
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
+      <AjustarAoContainer />
       <CentralizarNoBairro posicao={atual.coordenadas} />
 
       {bairros.map((bairro) => {
@@ -72,14 +95,14 @@ export default function MapaBairros({ bairros, bairroSelecionado, onSelecionarBa
           >
             <Popup>
               <div className="text-sm">
-                <p className="font-bold text-gray-800 mb-1">{bairro.nome}</p>
-                <p className="text-gray-600">
+                <p className="font-bold text-ink-900 mb-1">{bairro.nome}</p>
+                <p className="text-ink-600">
                   Custo de vida: <strong>R$ {bairro.custoVida.toLocaleString('pt-BR')}</strong>
                 </p>
-                <p className="text-gray-600">
+                <p className="text-ink-600">
                   Saneamento: <strong>{bairro.saneamento}%</strong>
                 </p>
-                <p className="text-gray-600">
+                <p className="text-ink-600">
                   IDEB: <strong>{bairro.ideb.toFixed(1)}</strong>
                 </p>
               </div>

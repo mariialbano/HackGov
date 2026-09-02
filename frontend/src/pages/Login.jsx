@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LockKeyhole, Check, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { formatarCpf, validarCpf, validarSenha, REQUISITOS_SENHA } from '../utils/validators';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, ShieldCheck, FileText, TrendingUp, Target } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { formatarCpf, validarCpf, validarSenha } from '../utils/validators';
 import FormField from '../components/FormField';
+import { controlClass, fieldBorder } from '../utils/formStyles';
+import ChecklistSenha from '../components/ChecklistSenha';
 import StatusMessage from '../components/StatusMessage';
+import Button from '../components/Button';
+import ThemeToggle from '../components/ThemeToggle';
+import VLibrasToggle from '../components/VLibrasToggle';
+
+// Serviços citados no painel institucional — todos existentes na plataforma.
+const destaques = [
+  { icon: FileText, texto: 'Acompanhe seus protocolos do pedido à conclusão' },
+  { icon: TrendingUp, texto: 'Simule o impacto da inflação no seu orçamento' },
+  { icon: Target, texto: 'Planeje metas e descubra quanto guardar por mês' },
+];
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,20 +26,16 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erros, setErros] = useState({});
-  const [status, setStatus] = useState(null); // { type: 'loading' | 'success' | 'error', message }
+  const [status, setStatus] = useState(null); // loading | success | error
 
   const validarFormulario = () => {
     const novosErros = {};
 
-    if (!cpf.trim()) {
-      novosErros.cpf = 'Informe seu CPF.';
-    } else if (!validarCpf(cpf)) {
-      novosErros.cpf = 'CPF inválido. Confira os dígitos informados.';
-    }
+    if (!cpf.trim()) novosErros.cpf = 'Informe seu CPF.';
+    else if (!validarCpf(cpf)) novosErros.cpf = 'CPF inválido. Confira os dígitos informados.';
 
-    if (!senha) {
-      novosErros.senha = 'Informe sua senha.';
-    } else {
+    if (!senha) novosErros.senha = 'Informe sua senha.';
+    else {
       const erroSenha = validarSenha(senha);
       if (erroSenha) novosErros.senha = erroSenha;
     }
@@ -46,98 +54,155 @@ export default function Login() {
     try {
       const result = await login({ cpf, senha });
       setStatus({ type: 'success', message: `Bem-vindo(a), ${result.user.nome}!` });
-      setTimeout(() => navigate('/dashboard'), 800);
+      setTimeout(() => navigate('/dashboard'), 700);
     } catch (error) {
       setStatus({ type: 'error', message: error.message });
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gov-bg flex flex-col items-center justify-center p-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gov-orange">HackGov VidaReal</h1>
-        <p className="text-gray-500 mt-2">Transformação digital ao seu alcance.</p>
-      </div>
+  const carregando = status?.type === 'loading';
 
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 w-full max-w-md">
-        <div className="flex items-center justify-center gap-2 mb-6 text-gray-700">
-          <LockKeyhole size={18} className="text-gov-orange" />
-          <p className="font-medium">Acesse sua conta</p>
+  return (
+    <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
+      {/* -------------------- Painel institucional -------------------- */}
+      <aside className="relative hidden overflow-hidden bg-panel px-12 py-14 text-panel-strong lg:flex lg:flex-col lg:justify-between">
+        {/* Luz quente saindo do canto, sem imagem externa */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(120% 90% at 8% 0%, rgba(255,129,1,0.30) 0%, rgba(255,129,1,0.06) 42%, transparent 70%)',
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
+            backgroundSize: '56px 56px',
+          }}
+        />
+
+        <div className="relative flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand font-display text-sm font-bold text-on-brand">
+            VR
+          </span>
+          <span className="font-display text-base font-bold tracking-tight">
+            Vida<span className="text-brand">Real</span>
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <FormField label="CPF" required error={erros.cpf}>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="username"
-              placeholder="000.000.000-00"
-              value={cpf}
-              onChange={(e) => setCpf(formatarCpf(e.target.value))}
-              maxLength={14}
-              className={`w-full border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gov-orange/40 transition ${
-                erros.cpf ? 'border-red-400' : 'border-gray-200'
-              }`}
-            />
-          </FormField>
+        <div className="relative max-w-lg">
+          <h1 className="font-display text-[2.6rem] font-bold leading-[1.08] tracking-tight text-panel-strong">
+            Transparência pública e educação financeira ao alcance de todos.
+          </h1>
+          <p className="mt-5 text-base leading-relaxed text-panel-muted">
+            A plataforma digital do cidadão de Taubaté para acompanhar serviços
+            públicos e cuidar do próprio orçamento.
+          </p>
 
-          <FormField label="Senha" required error={erros.senha}>
-            <div className="relative">
-              <input
-                type={mostrarSenha ? 'text' : 'password'}
-                autoComplete="current-password"
-                placeholder="Digite sua senha"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                maxLength={64}
-                className={`w-full border rounded-lg px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-gov-orange/40 transition ${
-                  erros.senha ? 'border-red-400' : 'border-gray-200'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setMostrarSenha((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+          <ul className="mt-10 space-y-4">
+            {destaques.map(({ icon: Icon, texto }) => (
+              <li key={texto} className="flex items-center gap-3.5 text-[0.95rem] text-panel-muted">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface/10 text-brand ring-1 ring-white/10">
+                  <Icon size={17} aria-hidden="true" />
+                </span>
+                {texto}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-            {/* Checklist da política de senha forte, atualizada em tempo real */}
-            <ul className="mt-2 space-y-1" aria-label="Requisitos da senha">
-              {REQUISITOS_SENHA.map((req) => {
-                const ok = req.test(senha);
-                return (
-                  <li
-                    key={req.id}
-                    className={`flex items-center gap-2 text-xs transition-colors ${
-                      ok ? 'text-green-600' : 'text-gray-400'
-                    }`}
-                  >
-                    {ok ? <Check size={14} className="shrink-0" /> : <X size={14} className="shrink-0" />}
-                    {req.label}
-                  </li>
-                );
-              })}
-            </ul>
-          </FormField>
-
-          <StatusMessage type={status?.type} message={status?.message} />
-
-          <button
-            type="submit"
-            disabled={status?.type === 'loading'}
-            className="w-full bg-gov-orange text-white py-3 px-6 rounded-full font-bold text-lg hover:bg-orange-600 transition shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {status?.type === 'loading' ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-
-        <p className="text-xs text-gray-400 mt-6 text-center">
-          Autenticação única e segura
+        <p className="relative flex items-center gap-2 text-xs text-panel-dim">
+          <ShieldCheck size={15} aria-hidden="true" />
+          Seus dados são protegidos conforme a LGPD.
         </p>
-      </div>
+      </aside>
+
+      {/* -------------------- Formulário -------------------- */}
+      <main className="relative flex items-center justify-center bg-canvas px-5 py-12 pb-40 sm:px-8 sm:pb-12">
+        <div className="absolute right-4 top-4 flex items-center gap-1">
+          <VLibrasToggle />
+          <ThemeToggle />
+        </div>
+
+        <div className="w-full max-w-[26rem]">
+          {/* Marca compacta: aparece só quando o painel lateral está oculto */}
+          <div className="mb-9 flex items-center gap-2.5 lg:hidden">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand font-display text-sm font-bold text-on-brand shadow-raised">
+              VR
+            </span>
+            <span className="font-display text-base font-bold tracking-tight text-ink-900">
+              Vida<span className="text-brand-ink">Real</span>
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-bold text-ink-900">Acesse sua conta</h2>
+          <p className="mt-2 text-sm text-ink-600">Entre com seu CPF para continuar.</p>
+
+          <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
+            <FormField label="CPF" required error={erros.cpf} htmlFor="cpf">
+              <input
+                id="cpf"
+                type="text"
+                inputMode="numeric"
+                autoComplete="username"
+                placeholder="000.000.000-00"
+                value={cpf}
+                onChange={(e) => setCpf(formatarCpf(e.target.value))}
+                maxLength={14}
+                className={`${controlClass} ${fieldBorder(erros.cpf)} tabular`}
+              />
+            </FormField>
+
+            <FormField label="Senha" required error={erros.senha} htmlFor="senha">
+              <div className="relative">
+                <input
+                  id="senha"
+                  type={mostrarSenha ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="Digite sua senha"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  maxLength={64}
+                  className={`${controlClass} ${fieldBorder(erros.senha)} pr-11`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha((v) => !v)}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-2 text-ink-500 transition-colors hover:text-ink-700"
+                  title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {mostrarSenha ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                  <span className="sr-only">{mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}</span>
+                </button>
+              </div>
+
+              <ChecklistSenha senha={senha} />
+            </FormField>
+
+            <StatusMessage type={status?.type} message={status?.message} />
+
+            <Button type="submit" size="lg" fullWidth loading={carregando}>
+              {carregando ? 'Entrando...' : 'Entrar'}
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-ink-600">
+            Ainda não tem conta?{' '}
+            <Link to="/cadastro" className="font-semibold text-brand-ink hover:underline">
+              Cadastre-se
+            </Link>
+          </p>
+
+          <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-ink-500">
+            <ShieldCheck size={14} aria-hidden="true" />
+            Autenticação única e segura
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

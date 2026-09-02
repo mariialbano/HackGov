@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import Button from './Button';
 
 export default function ConfirmDialog({
   isOpen,
@@ -8,51 +10,48 @@ export default function ConfirmDialog({
   cancelLabel = 'Cancelar',
   onConfirm,
   onCancel,
-  variant = 'danger',
 }) {
+  // Esc fecha o diálogo — expectativa básica de qualquer caixa modal.
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const aoTeclar = (e) => e.key === 'Escape' && onCancel?.();
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [isOpen, onCancel]);
+
   if (!isOpen) return null;
 
-  const confirmClass =
-    variant === 'danger'
-      ? 'bg-red-500 hover:bg-red-600 text-white'
-      : 'bg-gov-orange hover:bg-orange-600 text-white';
-
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[70] p-4">
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-ink-900/45 p-4 backdrop-blur-[2px]">
       <div
         role="alertdialog"
+        aria-modal="true"
         aria-labelledby="confirm-dialog-title"
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100"
+        className="surface-in w-full max-w-md overflow-hidden rounded-[var(--radius-card)] bg-surface shadow-overlay"
       >
-        <div className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-2.5 bg-red-50 text-red-500 rounded-xl shrink-0">
-              <AlertTriangle size={22} />
-            </div>
-            <div>
-              <h3 id="confirm-dialog-title" className="font-bold text-gray-800 text-lg">
-                {title}
-              </h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{message}</p>
-            </div>
+        <div className="flex items-start gap-4 p-6">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-danger-soft text-danger">
+            <AlertTriangle size={20} aria-hidden="true" />
+          </span>
+          <div>
+            <h2 id="confirm-dialog-title" className="text-lg font-bold text-ink-900">
+              {title}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-600">{message}</p>
           </div>
         </div>
 
-        <div className="flex gap-3 p-4 border-t border-gray-100 bg-gray-50">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-100 transition-colors"
-          >
+        <div className="flex gap-3 border-t border-ink-200 bg-ink-050 p-4">
+          <Button variant="secondary" fullWidth onClick={onCancel}>
             {cancelLabel}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            fullWidth
             onClick={onConfirm}
-            className={`flex-1 font-bold py-3 rounded-xl transition-colors ${confirmClass}`}
+            className="bg-danger text-on-fill shadow-raised hover:bg-danger-ink"
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

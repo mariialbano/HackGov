@@ -3,29 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HackGov VidaReal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <meta name="theme-color" content="#ff8101" />
+    <meta name="description" content="VidaReal - transparencia publica e educacao financeira para o cidadao de Taubate/SP." />
+    <title>VidaReal</title>
   </head>
   <body class="bg-gov-bg">
     <div id="root"></div>
 
-    <!-- VLibras: estrutura obrigatória do widget oficial do governo -->
-    <div vw class="enabled">
-      <div vw-access-button class="active"></div>
-      <div vw-plugin-wrapper>
-        <div class="vw-plugin-top-wrapper"></div>
-      </div>
-    </div>
-
+    <!-- VLibras, tradutor de Libras do governo federal.
+         A partir da versao 7 o plugin monta sozinho o proprio elemento
+         (#vlibras-access-wrapper, com shadow DOM) no body: a antiga
+         estrutura <div vw> nao e mais usada. Ele fica oculto por padrao
+         via CSS (ver index.css) e o botao na barra superior alterna. -->
     <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
-    <script>
-      // Padrão oficial: instanciar direto (o plugin aguarda o load da página
-      // internamente — envolver em window.onload impede a inicialização).
-      try {
-        new window.VLibras.Widget('https://vlibras.gov.br/app');
-      } catch (e) {
-        console.error('VLibras falhou ao carregar, mas a aplicação continua.', e);
-      }
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

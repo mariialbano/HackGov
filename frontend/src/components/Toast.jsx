@@ -5,16 +5,16 @@ export default function Toast({ notification, onClose }) {
   if (!notification) return null;
 
   return (
-    <div className="fixed top-20 right-4 z-[60] max-w-sm w-[calc(100%-2rem)] sm:w-full animate-fade-in">
-      <div className="relative shadow-lg rounded-xl">
+    <div className="surface-in fixed right-4 top-20 z-[60] w-[calc(100%-2rem)] max-w-sm sm:w-full">
+      <div className="relative rounded-[var(--radius-field)] bg-surface shadow-overlay">
         <StatusMessage type={notification.type} message={notification.message} />
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute right-2 top-2 rounded p-1 text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-700"
           aria-label="Fechar notificação"
         >
-          <X size={16} />
+          <X size={15} aria-hidden="true" />
         </button>
       </div>
     </div>

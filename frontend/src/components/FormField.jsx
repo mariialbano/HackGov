@@ -1,21 +1,22 @@
 import FieldError from './FieldError';
 
-export default function FormField({ label, hint, required, error, counter, children }) {
+// Estrutura padrão de um campo: rótulo, dica, controle, contador e erro.
+// Mantém o espaçamento e a hierarquia iguais em todos os formulários.
+
+export default function FormField({ label, hint, required, error, counter, htmlFor, children }) {
   return (
-    <div>
+    <div className="space-y-1.5">
       {label && (
-        <label className="block text-sm font-bold text-gray-700 mb-1">
+        <label htmlFor={htmlFor} className="flex items-baseline gap-1 text-sm font-semibold text-ink-800">
           {label}
-          {required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
+          {required && (
+            <span className="text-danger" aria-hidden="true">*</span>
+          )}
         </label>
       )}
-      {hint && (
-        <p className="text-xs text-gray-500 mb-2 leading-relaxed">{hint}</p>
-      )}
+      {hint && <p className="text-xs leading-relaxed text-ink-500">{hint}</p>}
       {children}
-      {counter && (
-        <p className="text-xs text-gray-400 mt-1 text-right">{counter}</p>
-      )}
+      {counter && <p className="text-right text-xs text-ink-500">{counter}</p>}
       <FieldError message={error} />
     </div>
   );
