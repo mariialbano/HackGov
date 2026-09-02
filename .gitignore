@@ -11,3 +11,6 @@ frontend/dist/
 backend/.env
 .env
 .idea/
+
+# Estado de execucao dos scripts iniciar/parar
+.run/
