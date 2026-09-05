@@ -4,6 +4,7 @@ import { KeyRound, Save, ShieldCheck, UserCog } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PageHeader from '../components/PageHeader';
 import FormField from '../components/FormField';
+import CampoCep from '../components/CampoCep';
 import CampoSenha from '../components/CampoSenha';
 import ChecklistSenha from '../components/ChecklistSenha';
 import StatusMessage from '../components/StatusMessage';
@@ -20,7 +21,7 @@ export default function Perfil() {
   const { user, atualizarUsuario, logout } = useAuth();
   const { notification, showSuccess, clear } = useToast();
 
-  const [dados, setDados] = useState({ nome: '', email: '' });
+  const [dados, setDados] = useState({ nome: '', email: '', cep: '', cidade: '' });
   const [errosDados, setErrosDados] = useState({});
   const [statusDados, setStatusDados] = useState(null);
 
@@ -35,7 +36,12 @@ export default function Perfil() {
     obterPerfil()
       .then((resposta) => {
         if (!ativo) return;
-        setDados({ nome: resposta.user.nome, email: resposta.email ?? '' });
+        setDados({
+          nome: resposta.user.nome,
+          email: resposta.email ?? '',
+          cep: resposta.cep ?? '',
+          cidade: resposta.cidade ?? '',
+        });
       })
       .catch((error) => {
         if (ativo) setStatusDados({ type: 'error', message: error.message });
@@ -67,6 +73,8 @@ export default function Perfil() {
       const resposta = await atualizarPerfil({
         nome: dados.nome.trim(),
         email: dados.email.trim(),
+        cep: dados.cep,
+        cidade: dados.cidade,
       });
       atualizarUsuario(resposta.user); // reflete o novo nome na navbar
       setStatusDados(null);
@@ -175,6 +183,13 @@ export default function Perfil() {
                 className={`${controlClass} ${fieldBorder(errosDados.email)}`}
               />
             </FormField>
+
+            <CampoCep
+              id="perfil-cep"
+              cep={dados.cep}
+              cidade={dados.cidade}
+              aoMudar={({ cep, cidade }) => setDados((a) => ({ ...a, cep, cidade }))}
+            />
 
             {/* CPF e perfil identificam a conta e o papel: não são editáveis */}
             <div className="grid gap-5 sm:grid-cols-2">

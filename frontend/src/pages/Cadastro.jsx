@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { formatarCpf, validarCpf, validarSenha } from '../utils/validators';
 import { controlClass, fieldBorder } from '../utils/formStyles';
 import FormField from '../components/FormField';
+import CampoCep from '../components/CampoCep';
 import CampoSenha from '../components/CampoSenha';
 import ChecklistSenha from '../components/ChecklistSenha';
 import StatusMessage from '../components/StatusMessage';
@@ -12,7 +13,7 @@ import Button from '../components/Button';
 import ThemeToggle from '../components/ThemeToggle';
 import VLibrasToggle from '../components/VLibrasToggle';
 
-const FORM_INICIAL = { nome: '', cpf: '', email: '', senha: '', confirmacao: '' };
+const FORM_INICIAL = { nome: '', cpf: '', email: '', cep: '', cidade: '', senha: '', confirmacao: '' };
 
 export default function Cadastro() {
   const navigate = useNavigate();
@@ -65,6 +66,8 @@ export default function Cadastro() {
         cpf: form.cpf,
         email: form.email.trim(),
         senha: form.senha,
+        cep: form.cep,
+        cidade: form.cidade,
       });
       setStatus({ type: 'success', message: `Conta criada. Bem-vindo(a), ${resultado.user.nome}!` });
       setTimeout(() => navigate('/dashboard'), 800);
@@ -157,6 +160,14 @@ export default function Cadastro() {
               className={`${controlClass} ${fieldBorder(erros.email)}`}
             />
           </FormField>
+
+          <CampoCep
+            cep={form.cep}
+            cidade={form.cidade}
+            aoMudar={({ cep, cidade }) =>
+              setForm((atual) => ({ ...atual, cep, cidade }))
+            }
+          />
 
           <FormField label="Senha" required error={erros.senha} htmlFor="senha">
             <CampoSenha

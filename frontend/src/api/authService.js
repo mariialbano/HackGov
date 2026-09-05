@@ -35,14 +35,14 @@ export async function login({ cpf, senha }) {
 // Cria uma conta de cidadão e já devolve a sessão aberta.
 // O perfil é sempre "cidadao": o de atendente é concedido pela gestão,
 // nunca escolhido por quem se cadastra.
-export function cadastrar({ nome, cpf, email, senha }) {
+export function cadastrar({ nome, cpf, email, senha, cep, cidade }) {
   const cpfLimpo = sanitizeText(String(cpf), 14).replace(/\D/g, '');
 
   if (!validarCpf(cpfLimpo)) {
     throw new Error('CPF inválido. Verifique os dígitos informados.');
   }
 
-  return api.post('/auth/cadastro', { nome, cpf: cpfLimpo, email, senha }, { auth: false });
+  return api.post('/auth/cadastro', { nome, cpf: cpfLimpo, email, senha, cep, cidade }, { auth: false });
 }
 
 // Encerra a sessão no servidor, invalidando o token.

@@ -112,7 +112,8 @@ public class AuthController {
     }
 
     /** Corpo do cadastro de um novo cidadao. */
-    public record CadastroRequest(String nome, String cpf, String email, String senha) {
+    public record CadastroRequest(String nome, String cpf, String email, String senha,
+                                  String cep, String cidade) {
     }
 
     /**
@@ -151,6 +152,14 @@ public class AuthController {
 
         Usuario novo = new Usuario(cpf, encoder.encode(corpo.senha()), nome,
                 email.isEmpty() ? null : email, Perfil.CIDADAO);
+
+        // Endereco vem do ViaCEP e e opcional: quem nao preencher se cadastra igual.
+        String cep = Validadores.apenasDigitos(corpo.cep());
+        if (cep.length() == 8) {
+            novo.setCep(cep);
+            novo.setCidade(Validadores.sanitizar(corpo.cidade(), 120));
+        }
+
         repositorio.adicionarUsuario(novo);
 
         repositorio.registrarAuditoria("CRIAR_CONTA", "auth", cpf, cpf,

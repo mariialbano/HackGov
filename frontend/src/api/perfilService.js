@@ -8,8 +8,8 @@ export function obterPerfil() {
   return api.get('/perfil');
 }
 
-export function atualizarPerfil({ nome, email }) {
-  return api.put('/perfil', { nome, email });
+export function atualizarPerfil({ nome, email, cep, cidade }) {
+  return api.put('/perfil', { nome, email, cep, cidade });
 }
 
 // Trocar a senha encerra a sessão no servidor: o usuário precisa entrar

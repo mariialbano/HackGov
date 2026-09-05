@@ -55,7 +55,7 @@ public class PerfilController {
         this.encoder = encoder;
     }
 
-    public record PerfilRequest(String nome, String email) {
+    public record PerfilRequest(String nome, String email, String cep, String cidade) {
     }
 
     public record SenhaRequest(String senhaAtual, String senhaNova) {
@@ -85,6 +85,11 @@ public class PerfilController {
 
         usuario.setNome(nome);
         usuario.setEmail(email.isEmpty() ? null : email);
+
+        // CEP em branco significa "apagar o endereco", nao "manter o antigo".
+        String cep = Validadores.apenasDigitos(corpo.cep());
+        usuario.setCep(cep.length() == 8 ? cep : null);
+        usuario.setCidade(cep.length() == 8 ? Validadores.sanitizar(corpo.cidade(), 120) : null);
 
         repositorio.registrarAuditoria("ATUALIZAR_PERFIL", "perfil", usuario.getCpf(),
                 usuario.getCpf(), usuario.getPerfil().getValor(), null);
@@ -130,6 +135,8 @@ public class PerfilController {
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("user", UsuarioResposta.de(usuario));
         resposta.put("email", usuario.getEmail());
+        resposta.put("cep", usuario.getCep());
+        resposta.put("cidade", usuario.getCidade());
         resposta.put("podeTramitar", usuario.getPerfil() == Perfil.ATENDENTE);
         return resposta;
     }

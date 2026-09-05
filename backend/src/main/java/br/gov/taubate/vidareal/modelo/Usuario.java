@@ -12,6 +12,17 @@ public class Usuario {
     private String senhaHash;
     private String nome;
     private String email;
+
+    /**
+     * Endereco do cidadao, preenchido a partir do CEP (ViaCEP).
+     *
+     * <p>Guardamos apenas CEP e cidade: e o suficiente para saber a que
+     * municipio a solicitacao pertence, sem coletar rua e numero — dado
+     * pessoal que a plataforma nao precisa (minimizacao, art. 6 da LGPD).</p>
+     */
+    private String cep;
+    private String cidade;
+
     private final Perfil perfil;
 
     public Usuario(String cpf, String senhaHash, String nome, Perfil perfil) {
@@ -53,6 +64,22 @@ public class Usuario {
     /** O CPF e o perfil nao mudam: identificam o usuario e seu papel. */
     public void setSenhaHash(String senhaHash) {
         this.senhaHash = senhaHash;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
+    }
+
+    public String getCidade() {
+        return cidade;
+    }
+
+    public void setCidade(String cidade) {
+        this.cidade = cidade;
     }
 
     public Perfil getPerfil() {
