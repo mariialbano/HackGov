@@ -59,6 +59,15 @@ export function AuthProvider({ children }) {
     setSession(null);
   };
 
+  // O cliente de API avisa quando o servidor recusou o token. Aqui a sessão
+  // do React é derrubada junto, para as telas protegidas devolverem o
+  // cidadão ao login em vez de exibirem um erro técnico.
+  useEffect(() => {
+    const aoExpirar = () => setSession(null);
+    window.addEventListener('vidareal:sessao-expirada', aoExpirar);
+    return () => window.removeEventListener('vidareal:sessao-expirada', aoExpirar);
+  }, []);
+
   // Expiração por inatividade: qualquer interação renova o prazo;
   // sem interação por 15 minutos, a sessão é encerrada.
   useEffect(() => {

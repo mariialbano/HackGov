@@ -16,6 +16,7 @@ import Comparativos from './pages/Comparativos';
 import ChatbotIA from './components/ChatBotIA';
 import FeedbackModal from './components/FeedbackModal';
 import ProtectedRoute from './components/ProtectedRoute';
+import Rodape from './components/Rodape';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
@@ -48,6 +49,10 @@ function App() {
             }
           />
         </Routes>
+
+        {/* Rodapé único para todas as telas internas (ele mesmo se oculta
+            no login e no cadastro, que têm composição de tela cheia). */}
+        <Rodape />
 
         {/* Injeta a função de abrir o feedback ao clicar na estrela verde do chatbot */}
         <ChatbotIA onOpenFeedback={() => setIsFeedbackOpen(true)} />

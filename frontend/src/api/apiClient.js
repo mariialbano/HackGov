@@ -81,6 +81,28 @@ async function request(caminho, { method = 'GET', body, auth = true } = {}) {
 
   if (!resposta.ok) {
     const erro = dados?.error;
+
+    // 401 numa rota autenticada significa que a sessão não vale mais: token
+    // expirado, servidor reiniciado ou senha trocada em outro lugar. Nesse
+    // caso o certo é devolver o cidadão ao login, não mostrar a mensagem
+    // técnica do protocolo ("Envie o token no cabeçalho...") no meio da tela.
+    //
+    // A exceção é o próprio login: ali o 401 quer dizer "credenciais
+    // incorretas" e precisa aparecer no formulário.
+    if (resposta.status === 401 && auth) {
+      try {
+        sessionStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem('hackgov.lastActivity');
+      } catch {
+        // Armazenamento bloqueado: segue para o redirecionamento assim mesmo.
+      }
+      window.dispatchEvent(new CustomEvent('vidareal:sessao-expirada'));
+      throw new ApiError('Sua sessão expirou. Entre novamente para continuar.', {
+        status: 401,
+        code: 'SESSAO_EXPIRADA',
+      });
+    }
+
     throw new ApiError(erro?.message || 'Erro inesperado ao comunicar com o servidor.', {
       status: resposta.status,
       code: erro?.code,
