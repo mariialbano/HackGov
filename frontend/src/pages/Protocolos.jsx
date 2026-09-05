@@ -10,8 +10,10 @@ import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, X, FileText, Pencil, Trash2, Eye, Loader2, RefreshCw, Check } from 'lucide-react';
-import { PROTOCOLO_TIPOS, STATUS_OPCOES, formatarData } from '../utils/protocoloUtils';
+import { Plus, X, FileText, Pencil, Trash2, Eye, Loader2, RefreshCw, Check, CalendarClock, Download } from 'lucide-react';
+import { PROTOCOLO_TIPOS, STATUS_OPCOES, getStatusOpcao, formatarData } from '../utils/protocoloUtils';
+import { obterPrazo } from '../api/dadosPublicosService';
+import { novoRelatorio } from '../utils/relatorioPdf';
 import {
   listarProtocolos,
   criarProtocolo,
@@ -84,6 +86,9 @@ export default function Protocolos() {
 
   const [modalMode, setModalMode] = useState(null);
   const [detailProtocolo, setDetailProtocolo] = useState(null);
+  // Data-limite real do protocolo aberto no modal, calculada pelo
+  // servidor com os feriados nacionais do ano.
+  const [prazoLimite, setPrazoLimite] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(FORM_INICIAL);
   const [formErrors, setFormErrors] = useState({});
@@ -203,6 +208,71 @@ export default function Protocolos() {
     } finally {
       setEnviando(false);
     }
+  };
+
+  // Converte o prazo da etapa ("20 dias úteis") na data em que ele vence.
+  // Quem conta os dias é o servidor, que conhece os feriados nacionais.
+  useEffect(() => {
+    if (!detailProtocolo || detailProtocolo.progresso >= 100) return undefined;
+
+    const dias = getStatusOpcao(detailProtocolo.progresso).diasUteis;
+    if (!dias) return undefined;
+
+    const abertura = detailProtocolo.abertoEm
+      ? new Date(detailProtocolo.abertoEm).toISOString().slice(0, 10)
+      : undefined;
+
+    let ativo = true;
+    obterPrazo(dias, abertura)
+      // O id viaja junto para a tela nunca mostrar o prazo de outro protocolo
+      // enquanto a consulta do atual ainda está a caminho.
+      .then((dados) => ativo && setPrazoLimite({ ...dados, paraId: detailProtocolo.id }))
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, [detailProtocolo]);
+
+  // Comprovante em PDF: o documento que o cidadao guarda ou apresenta
+  // no atendimento presencial.
+  const exportarComprovante = (prot) => {
+    const etapa = getStatusOpcao(prot.progresso);
+
+    const campos = [
+      ['Número do protocolo', prot.id],
+      ['Tipo de solicitação', prot.tipo],
+      ['Situação atual', prot.status],
+      ['Aberto em', formatarData(prot.abertoEm)],
+    ];
+
+    if (prazoLimite?.paraId === prot.id) {
+      campos.push(['Prazo de resposta', `${formatarData(prazoLimite.vencimento)} (${prazoLimite.diasUteis} dias úteis)`]);
+    } else if (etapa.diasUteis) {
+      campos.push(['Prazo de resposta', `${etapa.diasUteis} dias úteis`]);
+    }
+
+    if (prot.concluidoEm) {
+      campos.push(['Concluído em', formatarData(prot.concluidoEm)]);
+    }
+
+    campos.push(['Solicitante', user?.nome ?? '—']);
+
+    novoRelatorio({
+      titulo: 'Comprovante de protocolo',
+      subtitulo: `Registro da solicitação ${prot.id} na plataforma VidaReal.`,
+    })
+      .secao('Dados da solicitação')
+      .campos(campos)
+      .secao('Descrição registrada')
+      .paragrafo(prot.descricao || 'Nenhuma descrição registrada.')
+      .nota(
+        'Documento gerado automaticamente pela plataforma a partir dos dados do ' +
+        'protocolo. Prazos em dias úteis desconsideram fins de semana e feriados ' +
+        'nacionais (fonte: BrasilAPI).'
+      )
+      .salvar(`protocolo-${prot.id}.pdf`);
+
+    showSuccess('Comprovante gerado. Confira a pasta de downloads.');
   };
 
   // PATCH /api/v1/protocolos/:id/status — só o atendente pode tramitar
@@ -560,6 +630,20 @@ export default function Protocolos() {
                   {formatarData(detailProtocolo.abertoEm)}
                 </dd>
               </div>
+              {prazoLimite?.paraId === detailProtocolo.id && (
+                <div className="flex items-center justify-between gap-4 py-3">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                    Prazo de resposta
+                  </dt>
+                  <dd className="flex items-center gap-1.5 text-right text-sm font-medium text-ink-900">
+                    <CalendarClock size={14} className="shrink-0 text-brand-ink" aria-hidden="true" />
+                    <span className="tabular">{formatarData(prazoLimite.vencimento)}</span>
+                    <span className="text-xs font-normal text-ink-500">
+                      ({prazoLimite.diasUteis} dias úteis)
+                    </span>
+                  </dd>
+                </div>
+              )}
               {detailProtocolo.concluidoEm && (
                 <div className="flex items-center justify-between gap-4 py-3">
                   <dt className="text-xs font-semibold uppercase tracking-wide text-ink-500">
@@ -578,7 +662,15 @@ export default function Protocolos() {
               </div>
             </dl>
 
-            <div className="flex gap-3 border-t border-ink-200 bg-ink-050 p-4">
+            <div className="flex flex-wrap gap-3 border-t border-ink-200 bg-ink-050 p-4">
+              <Button
+                variant="secondary"
+                fullWidth
+                icon={Download}
+                onClick={() => exportarComprovante(detailProtocolo)}
+              >
+                Exportar PDF
+              </Button>
               <Button
                 variant="secondary"
                 fullWidth

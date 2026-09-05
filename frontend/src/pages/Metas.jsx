@@ -6,7 +6,8 @@ import FormField from '../components/FormField';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import { Target, Plus, X, Trash2, DollarSign, Calendar, CheckCircle2, Pencil } from 'lucide-react';
+import { Target, Plus, X, Trash2, DollarSign, Calendar, CheckCircle2, Pencil, TrendingUp } from 'lucide-react';
+import { obterSelic } from '../api/dadosPublicosService';
 
 const TIPOS_PADRAO = ['Reserva de Emergência', 'Férias', 'Viagem', 'Investimentos'];
 const TIPO_OUTROS = 'Outros';
@@ -47,9 +48,35 @@ export default function Metas() {
   const [editObjetivo, setEditObjetivo] = useState('');
   const [editPrazo, setEditPrazo] = useState('');
 
+  // Taxa Selic real, para mostrar quanto o dinheiro ja guardado rende
+  // ate o fim do prazo da meta. Se a consulta falhar, o painel some.
+  const [selic, setSelic] = useState(null);
+
   const [createErrors, setCreateErrors] = useState({});
   const [editErrors, setEditErrors] = useState({});
   const [editMetaErrors, setEditMetaErrors] = useState({});
+
+  // Busca a meta Selic uma vez por visita.
+  useEffect(() => {
+    let ativo = true;
+    obterSelic()
+      .then((dados) => ativo && setSelic(dados))
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  // Quanto o valor ja acumulado rende ate o fim do prazo, a taxa Selic.
+  // Juros compostos sobre a fracao de ano correspondente ao prazo.
+  const rendimentoAteOPrazo = (meta) => {
+    if (!selic || !meta.atual) return null;
+    const meses = parseFloat(String(meta.prazo).replace(/\D/g, ''));
+    if (!meses || meses <= 0) return null;
+    const taxa = parseFloat(selic.aoAno) / 100;
+    const rendimento = meta.atual * (Math.pow(1 + taxa, meses / 12) - 1);
+    return rendimento > 0 ? rendimento : null;
+  };
 
   const { notification, showSuccess, clear } = useToast();
 
@@ -444,6 +471,21 @@ export default function Metas() {
                       </p>
                     )}
                   </div>
+
+                  {/* Rendimento real: o que ja foi guardado nao fica parado.
+                      A taxa vem do Banco Central, nao e estimativa nossa. */}
+                  {!isConcluida && rendimentoAteOPrazo(meta) && (
+                    <p className="mt-3 flex items-start gap-1.5 border-t border-ink-200 pt-3 text-xs leading-relaxed text-ink-600">
+                      <TrendingUp size={13} className="mt-0.5 shrink-0 text-positive-ink" aria-hidden="true" />
+                      <span>
+                        Rendendo à Selic ({selic.aoAno}% a.a.), o valor já guardado gera{' '}
+                        <strong className="text-positive-ink">
+                          R$ {rendimentoAteOPrazo(meta).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                        </strong>{' '}
+                        até o fim do prazo.
+                      </span>
+                    </p>
+                  )}
                 </div>
               );
             })}

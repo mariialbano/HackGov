@@ -6,10 +6,12 @@ export const PROTOCOLO_TIPOS = [
   'Sugestão de melhoria',
 ];
 
+// `diasUteis` alimenta o cálculo da data-limite real: o servidor conta os
+// dias pulando fins de semana e feriados nacionais (GET /dados/prazo).
 export const STATUS_OPCOES = [
-  { value: 33, label: 'Solicitação Criada', status: 'Solicitação Criada', prazo: 'Prazo: 20 dias úteis', corPrazo: 'bg-blue-600' },
-  { value: 66, label: 'Em análise', status: 'Em análise', prazo: 'Prazo: 15 dias úteis', corPrazo: 'bg-gov-orange' },
-  { value: 100, label: 'Concluído', status: 'Concluído', prazo: 'Prazo: Concluído', corPrazo: 'bg-gov-green' },
+  { value: 33, label: 'Solicitação Criada', status: 'Solicitação Criada', prazo: 'Prazo: 20 dias úteis', diasUteis: 20, corPrazo: 'bg-blue-600' },
+  { value: 66, label: 'Em análise', status: 'Em análise', prazo: 'Prazo: 15 dias úteis', diasUteis: 15, corPrazo: 'bg-gov-orange' },
+  { value: 100, label: 'Concluído', status: 'Concluído', prazo: 'Prazo: Concluído', diasUteis: null, corPrazo: 'bg-gov-green' },
 ];
 
 export function getStatusOpcao(progresso) {
@@ -31,8 +33,23 @@ export function formatarDataHoje() {
 
 // A API devolve datas em ISO 8601 (padrão REST); a formatação para
 // dd/mm/aaaa é responsabilidade da camada de apresentação.
+//
+// Cuidado com o fuso: `new Date('2026-05-28')` é interpretado como meia-noite
+// em UTC, que no Brasil (UTC-3) ainda é dia 27 — a data apareceria um dia
+// atrasada. Por isso uma data SEM horário é montada campo a campo, no fuso
+// local. Datas com horário (o instante em que algo aconteceu) seguem o
+// comportamento normal, que aí é o correto.
 export function formatarData(valor) {
   if (!valor) return '—';
+
+  if (typeof valor === 'string') {
+    const soData = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (soData) {
+      const [, ano, mes, dia] = soData;
+      return `${dia}/${mes}/${ano}`;
+    }
+  }
+
   const data = valor instanceof Date ? valor : new Date(valor);
   if (Number.isNaN(data.getTime())) return '—';
   const dia = String(data.getDate()).padStart(2, '0');

@@ -6,12 +6,18 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, Save, Pencil, Trash2, X, FolderOpen } from 'lucide-react';
+import { Download, Save, Pencil, Trash2, X, FolderOpen, RefreshCw } from 'lucide-react';
+import { obterIpca } from '../api/dadosPublicosService';
+import { novoRelatorio } from '../utils/relatorioPdf';
 
 export default function Inflacao() {
   const [valor, setValor] = useState(1000);
   const [anos, setAnos] = useState(5);
   const [inflacao, setInflacao] = useState(4.5);
+  // IPCA real vindo do Banco Central. Enquanto nao chega, o campo usa
+  // 4,5% como estimativa — o simulador nunca fica sem taxa.
+  const [ipca, setIpca] = useState(null);
+  const [ipcaErro, setIpcaErro] = useState(false);
 
   const [simulacoes, setSimulacoes] = useState(() => {
     const saved = localStorage.getItem('hackgov_simulacoes');
@@ -29,6 +35,23 @@ export default function Inflacao() {
   useEffect(() => {
     localStorage.setItem('hackgov_simulacoes', JSON.stringify(simulacoes));
   }, [simulacoes]);
+
+  // Busca o IPCA acumulado em 12 meses e o adota como taxa inicial.
+  useEffect(() => {
+    let ativo = true;
+    obterIpca()
+      .then((dados) => {
+        if (!ativo) return;
+        setIpca(dados);
+        setInflacao(String(dados.acumulado12Meses));
+      })
+      .catch(() => {
+        if (ativo) setIpcaErro(true);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const valorNum = parseFloat(valor) || 0;
   const anosNum = parseInt(anos, 10) || 0;
@@ -113,8 +136,68 @@ export default function Inflacao() {
     setDeleteTarget(null);
   };
 
+  // Gera o PDF da simulação no próprio navegador, com texto de verdade.
   const handleExportPdf = () => {
-    showSuccess('Relatório preparado. Em produção, o PDF seria gerado e baixado automaticamente.');
+    if (valorNum <= 0) {
+      setFormErrors({ geral: 'Informe um valor maior que zero antes de exportar.' });
+      return;
+    }
+
+    const brl = (v) =>
+      `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Decimal em português usa vírgula, inclusive dentro do PDF. As casas
+    // são fixas: numa coluna de números, "19%" ao lado de "4,4%" desalinha
+    // a vírgula e faz a tabela parecer quebrada.
+    const pct = (v, casas = 2) =>
+      `${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })}%`;
+
+    const relatorio = novoRelatorio({
+      titulo: 'Simulação de inflação',
+      subtitulo: 'Projeção do impacto da inflação sobre o poder de compra.',
+    });
+
+    relatorio
+      .secao('Parâmetros usados')
+      .campos([
+        ['Valor atual', brl(valorNum)],
+        ['Período projetado', `${anosNum} ano${anosNum !== 1 ? 's' : ''}`],
+        ['Taxa de inflação', `${pct(inflacaoNum)} ao ano`],
+        ['Origem da taxa', ipca && inflacaoNum === parseFloat(ipca.acumulado12Meses)
+          ? `IPCA oficial, referência ${ipca.referencia}`
+          : 'Informada pelo usuário'],
+      ])
+      .secao('Resultado')
+      .campos([
+        ['Poder de compra necessário', brl(valorFuturo)],
+        ['Crescimento acumulado', pct(crescimento, 1)],
+        ['Diferença em reais', brl(valorFuturo - valorNum)],
+      ])
+      .secao('Projeção ano a ano')
+      .tabela({
+        colunas: ['Período', 'Valor projetado', 'Acréscimo sobre hoje'],
+        larguras: [50, 62, 62],
+        alinhamentos: ['left', 'right', 'right'],
+        linhas: data.map((linha) => [
+          linha.ano,
+          brl(linha.valor),
+          pct((((linha.valor / valorNum) - 1) * 100), 1),
+        ]),
+      })
+      .paragrafo(
+        `Em ${anosNum} ano${anosNum !== 1 ? 's' : ''}, seria preciso ${brl(valorFuturo)} ` +
+        `para manter o mesmo poder de compra que ${brl(valorNum)} tem hoje, ` +
+        `mantida a inflação de ${pct(inflacaoNum)} ao ano.`
+      )
+      .nota(
+        ipca
+          ? `Taxa de referência: ${ipca.fonte}. Projeção calculada por juros compostos. ` +
+            'Este documento tem caráter informativo e não constitui recomendação financeira.'
+          : 'Projeção calculada por juros compostos. Este documento tem caráter informativo ' +
+            'e não constitui recomendação financeira.'
+      )
+      .salvar(`simulacao-inflacao-${anosNum}anos.pdf`);
+
+    showSuccess('PDF gerado. Confira a pasta de downloads.');
   };
 
   return (
@@ -163,7 +246,13 @@ export default function Inflacao() {
 
               <FormField
                 label="Taxa de Inflação (% ao ano)"
-                hint="Taxa anual estimada. O IPCA médio dos últimos anos gira em torno de 4% a 5%."
+                hint={
+                  ipca
+                    ? `Preenchido com o IPCA acumulado em 12 meses (ref. ${ipca.referencia}). Você pode alterar.`
+                    : ipcaErro
+                      ? 'Não foi possível consultar o Banco Central agora. Usando 4,5% como estimativa.'
+                      : 'Buscando o IPCA oficial no Banco Central...'
+                }
                 required
               >
                 <input
@@ -174,6 +263,22 @@ export default function Inflacao() {
                   onChange={(e) => setInflacao(e.target.value)}
                   className="w-full border p-2 rounded-lg focus:border-brand outline-none"
                 />
+                {/* Devolve o campo ao valor oficial depois de o usuário mexer */}
+                {ipca && parseFloat(inflacao) !== parseFloat(ipca.acumulado12Meses) && (
+                  <button
+                    type="button"
+                    onClick={() => setInflacao(String(ipca.acumulado12Meses))}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-brand-ink hover:underline"
+                  >
+                    <RefreshCw size={12} aria-hidden="true" />
+                    Voltar ao IPCA oficial ({ipca.acumulado12Meses}%)
+                  </button>
+                )}
+                {ipca && (
+                  <p className="mt-2 text-xs text-ink-500">
+                    Fonte: {ipca.fonte}
+                  </p>
+                )}
               </FormField>
 
               <div className="flex gap-2 mt-4">

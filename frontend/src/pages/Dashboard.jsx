@@ -14,8 +14,8 @@ const ferramentasFinanceiras = [
 ];
 
 const ferramentasTransparencia = [
-  { title: 'Indicadores Locais', desc: 'Custo de vida, saneamento e educação por bairro', icon: MapPin, path: '/indicadores' },
-  { title: 'Comparativo Nacional', desc: 'Taubaté frente às médias estadual e nacional', icon: BarChart3, path: '/comparativos', perfis: ['atendente'] },
+  { title: 'Indicadores Municipais', desc: 'População, PIB, saneamento e educação da sua cidade', icon: MapPin, path: '/indicadores' },
+  { title: 'Comparativo entre municípios', desc: 'Sua cidade frente a outra, com dados do IBGE', icon: BarChart3, path: '/comparativos', perfis: ['atendente'] },
 ];
 
 function primeiroNome(nome) {
