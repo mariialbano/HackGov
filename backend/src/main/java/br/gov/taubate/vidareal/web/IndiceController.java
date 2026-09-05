@@ -51,6 +51,12 @@ public class IndiceController {
         recursos.put("feedbacks", "POST /api/v1/feedbacks · GET /api/v1/feedbacks (atendente)");
         recursos.put("chat", "POST /api/v1/chat");
         recursos.put("auditoria", "GET /api/v1/auditoria (atendente)");
+        recursos.put("dados",
+                "GET /api/v1/dados/ipca · GET /api/v1/dados/selic · "
+                        + "GET /api/v1/dados/feriados · GET /api/v1/dados/prazo · "
+                        + "GET /api/v1/dados/estados · GET /api/v1/dados/municipios · "
+                        + "GET /api/v1/dados/municipios/{id} · GET /api/v1/dados/municipios/{id}/malha · "
+                        + "GET /api/v1/dados/cep/{cep}");
 
         Map<String, Object> resposta = new LinkedHashMap<>();
         resposta.put("servico", "VidaReal API");
