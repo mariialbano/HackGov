@@ -12,10 +12,17 @@ Taubaté/SP.
 - **Acompanhamento de Protocolos** — abertura e acompanhamento de solicitações com status e prazos
 - **Simulação de Inflação** — projeção do valor futuro de um bem (juros compostos), com gráfico e exportação em PDF
 - **Metas Financeiras** — planejamento de economia mensal com análise de viabilidade
-- **Indicadores Locais** — dados socioeconômicos da cidade (custo de vida, saneamento, educação)
-- **Comparativo Regional e Nacional** — área restrita ao perfil atendente
+- **Indicadores Municipais** — população, PIB, PIB por habitante, saneamento,
+  IDEB, escolarização e salário médio de qualquer município do país (escolha
+  por estado), com mapa em quatro camadas, o contorno real do território e
+  camadas de equipamentos públicos (escolas, saúde, farmácias, parques)
+- **Comparativo entre municípios** — duas cidades quaisquer lado a lado, com
+  atalho para a cidade do próprio cadastro (área restrita ao perfil atendente)
+- **Dados abertos de governo** — IPCA e Selic do Banco Central, feriados nacionais,
+  população e PIB do IBGE, endereço por CEP
 - **Chatbot com IA** — assistente virtual integrado à API do Google Gemini
 - **Feedback** — avaliação da experiência com nota e comentário
+- **Exportação em PDF** — relatório da simulação de inflação e comprovante de protocolo
 - **Acessibilidade** — tema claro/escuro e tradutor de Libras (VLibras) com
   botão para ligar e desligar
 
@@ -122,6 +129,7 @@ todos os endpoints disponíveis.
 | **Metas** | `GET`/`POST` `/metas` · `GET`/`PUT`/`DELETE` `/metas/:id` · `PATCH /metas/:id/aporte` |
 | **Feedbacks** | `POST /feedbacks` · `GET /feedbacks` (atendente) |
 | **Chat (IA)** | `POST /chat` |
+| **Dados abertos** | `GET /dados/ipca` · `GET /dados/selic` · `GET /dados/feriados` · `GET /dados/prazo` · `GET /dados/municipios` · `GET /dados/municipios/:id` · `GET /dados/cep/:cep` |
 | **Auditoria** | `GET /auditoria` (atendente) |
 
 Boas práticas aplicadas: versionamento no caminho, métodos HTTP semânticos,
@@ -201,6 +209,69 @@ protocolos):
      do controller executar.
 - Mitiga XSS, injeção de conteúdo malicioso e abuso da API de IA.
 
+## Dados abertos de governo
+
+A plataforma consome cinco fontes públicas, todas gratuitas e sem chave de acesso:
+
+| Fonte | O que traz | Onde aparece |
+|---|---|---|
+| **Banco Central (SGS 433)** | IPCA acumulado em 12 meses | Simulador de inflação |
+| **Banco Central (SGS 432)** | Meta Selic | Metas financeiras |
+| **BrasilAPI** | Feriados nacionais | Prazo real dos protocolos |
+| **IBGE Localidades** | Estados e municípios | Seletor de estado e cidade |
+| **IBGE SIDRA** | População e PIB municipais | Indicadores e Comparativo |
+| **IBGE painel Cidades** | Saneamento, IDEB, escolarização e salário médio | Indicadores sociais |
+| **ViaCEP** | Endereço pelo CEP | Cadastro, perfil e cidade dos Indicadores |
+| **Nominatim (OSM)** | Coordenadas do município | Mapa dos Indicadores |
+| **IBGE Malhas** | Contorno do município (GeoJSON) | Desenho do limite no mapa |
+| **Esri / OpenTopoMap / CARTO** | Camadas de satélite, relevo e base limpa | Tipos de mapa |
+| **OpenStreetMap (Overpass)** | Escolas, saúde, farmácias, parques e segurança | Camadas de pontos no mapa |
+
+**Quem consulta é o backend, nunca o navegador.** O front-end pede a
+`/api/v1/dados/...` e a API busca na origem. Isso evita bloqueio por CORS,
+faz uma única consulta servir todos os visitantes (há cache com validade
+por tipo de dado) e mantém o site de pé quando o servidor público cai — nesse
+caso a resposta é o último valor conhecido.
+
+Dois cuidados com a honestidade do dado: cada indicador do IBGE traz o **ano
+de referência**, porque as pesquisas não são publicadas no mesmo ritmo; e o PIB
+por habitante usa a população do ano mais próximo ao do PIB, dizendo qual foi
+(o IBGE não estima população em ano de Censo).
+
+Nenhuma base pública divulga indicadores **por bairro** — por isso a comparação
+é entre municípios. Saneamento, IDEB, escolarização e salário médio vêm do
+painel Cidades do IBGE, que consolida Censo 2022, INEP e Cadastro Central de
+Empresas.
+
+## Exportação em PDF
+
+Dois documentos são gerados **no próprio navegador**, com a biblioteca jsPDF:
+
+| Documento | Onde | Conteúdo |
+|---|---|---|
+| Simulação de inflação | Inflação → *Exportar PDF* | Parâmetros, resultado, projeção ano a ano e a fonte da taxa |
+| Comprovante de protocolo | Protocolos → *Ver detalhes* → *Exportar PDF* | Número, tipo, situação, datas, prazo em dias úteis e descrição |
+
+O relatório é desenhado com **texto de verdade**, não como captura de tela: o
+arquivo fica selecionável, pesquisável, leve (poucos KB) e imprime bem em
+qualquer papel. Como a geração é local, o download funciona mesmo que a API
+esteja fora do ar, desde que a página já esteja carregada.
+
+## A cidade do cidadão
+
+As telas de dados não giram em torno de um município fixo: elas abrem na
+**cidade do CEP que a pessoa cadastrou** (Perfil → CEP). O ViaCEP devolve o
+código do IBGE junto com o endereço, então uma consulta resolve qual é a
+cidade e como pedir os indicadores dela.
+
+Quem mora em Salvador vê Salvador em Indicadores e no Comparativo; quem não
+informou o CEP vê Taubaté, a cidade da prefeitura que opera a plataforma — que
+é o padrão, não o centro do sistema.
+
+Em qualquer caso o cidadão continua livre para navegar por qualquer um dos mais
+de 5.500 municípios do país. No Comparativo os **dois lados são escolhidos
+livremente**, e um botão "usar minha cidade" traz de volta a do cadastro.
+
 ## Acessibilidade e aparência
 
 - **Tema claro e escuro**, com uma terceira opção que segue a preferência do
@@ -219,6 +290,6 @@ protocolos):
 
 ## Tecnologias
 
-- **Frontend:** React 19, Vite, Tailwind CSS 4, React Router 7, Leaflet, Recharts, Lucide
+- **Frontend:** React 19, Vite, Tailwind CSS 4, React Router 7, Leaflet, Recharts, jsPDF, Lucide
 - **Backend:** Java 21, Spring Boot 3.5, Spring Web, Bean Validation, BCrypt
 - **Modelagem de dados:** Oracle SQL (3ª Forma Normal)
