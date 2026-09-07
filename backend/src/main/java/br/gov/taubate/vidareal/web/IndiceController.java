@@ -2,7 +2,7 @@ package br.gov.taubate.vidareal.web;
 
 import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.RegistroAuditoria;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.web.dto.Pagina;
 import java.util.LinkedHashMap;
@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class IndiceController {
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
 
-    public IndiceController(RepositorioMemoria repositorio) {
+    public IndiceController(Repositorio repositorio) {
         this.repositorio = repositorio;
     }
 

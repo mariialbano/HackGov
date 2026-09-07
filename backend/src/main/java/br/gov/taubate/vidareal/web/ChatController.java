@@ -4,7 +4,7 @@ import br.gov.taubate.vidareal.erro.ApiException;
 import br.gov.taubate.vidareal.erro.ErroCampo;
 import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.Usuario;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.LimitadorRequisicoes;
 import br.gov.taubate.vidareal.seguranca.UsuarioLogado;
 import br.gov.taubate.vidareal.util.Validadores;
@@ -44,7 +44,7 @@ public class ChatController {
     private static final int TAMANHO_MAXIMO = 1000;
     private static final Duration TIMEOUT = Duration.ofSeconds(20);
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
     private final ObjectMapper json = new ObjectMapper();
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -59,7 +59,7 @@ public class ChatController {
     @Value("${vidareal.ia.modelo:gemini-3-flash-preview}")
     private String modelo;
 
-    public ChatController(RepositorioMemoria repositorio,
+    public ChatController(Repositorio repositorio,
                           @Value("${vidareal.seguranca.chat.limite:20}") int limite) {
         this.repositorio = repositorio;
         this.limitador = new LimitadorRequisicoes(limite, Duration.ofMinutes(1));

@@ -6,7 +6,7 @@ import br.gov.taubate.vidareal.modelo.EtapaProtocolo;
 import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.Protocolo;
 import br.gov.taubate.vidareal.modelo.Usuario;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.seguranca.UsuarioLogado;
 import br.gov.taubate.vidareal.util.Validadores;
@@ -50,9 +50,9 @@ public class ProtocoloController {
     private static final int DESCRICAO_MINIMA = 10;
     private static final int DESCRICAO_MAXIMA = 1000;
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
 
-    public ProtocoloController(RepositorioMemoria repositorio) {
+    public ProtocoloController(Repositorio repositorio) {
         this.repositorio = repositorio;
     }
 
@@ -96,7 +96,7 @@ public class ProtocoloController {
         }
 
         Map<String, Long> porTipo = new LinkedHashMap<>();
-        for (String tipo : RepositorioMemoria.TIPOS_PROTOCOLO) {
+        for (String tipo : Repositorio.TIPOS_PROTOCOLO) {
             long quantidade = visiveis.stream().filter(p -> p.getTipo().equals(tipo)).count();
             if (quantidade > 0) {
                 porTipo.put(tipo, quantidade);
@@ -198,6 +198,7 @@ public class ProtocoloController {
         protocolo.setTipo(tipo);
         protocolo.setDescricao(descricao);
         protocolo.moverPara(novaEtapa);
+        repositorio.salvarProtocolo(protocolo);
 
         repositorio.registrarAuditoria("ATUALIZAR_PROTOCOLO", "protocolos", protocolo.getId(),
                 usuario.getCpf(), usuario.getPerfil().getValor(),
@@ -231,6 +232,7 @@ public class ProtocoloController {
 
         String anterior = protocolo.getEtapa().getStatus();
         protocolo.moverPara(novaEtapa);
+        repositorio.salvarProtocolo(protocolo);
 
         repositorio.registrarAuditoria("ALTERAR_STATUS", "protocolos", protocolo.getId(),
                 usuario.getCpf(), usuario.getPerfil().getValor(),
@@ -270,9 +272,9 @@ public class ProtocoloController {
                                boolean exigirProgresso) {
         List<ErroCampo> erros = new ArrayList<>();
 
-        if (!RepositorioMemoria.TIPOS_PROTOCOLO.contains(tipo)) {
+        if (!Repositorio.TIPOS_PROTOCOLO.contains(tipo)) {
             erros.add(new ErroCampo("tipo", "Deve ser um dos tipos: "
-                    + String.join(" | ", RepositorioMemoria.TIPOS_PROTOCOLO) + "."));
+                    + String.join(" | ", Repositorio.TIPOS_PROTOCOLO) + "."));
         }
         if (descricao.length() < DESCRICAO_MINIMA) {
             erros.add(new ErroCampo("descricao", "Deve ter no mínimo "

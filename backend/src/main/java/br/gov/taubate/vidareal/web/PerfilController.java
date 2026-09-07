@@ -4,7 +4,7 @@ import br.gov.taubate.vidareal.erro.ApiException;
 import br.gov.taubate.vidareal.erro.ErroCampo;
 import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.Usuario;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.seguranca.AutenticacaoInterceptor;
 import br.gov.taubate.vidareal.seguranca.SessaoService;
@@ -44,11 +44,11 @@ import org.springframework.web.bind.annotation.RestController;
 @Autenticado
 public class PerfilController {
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
     private final SessaoService sessoes;
     private final BCryptPasswordEncoder encoder;
 
-    public PerfilController(RepositorioMemoria repositorio, SessaoService sessoes,
+    public PerfilController(Repositorio repositorio, SessaoService sessoes,
                             BCryptPasswordEncoder encoder) {
         this.repositorio = repositorio;
         this.sessoes = sessoes;
@@ -91,6 +91,8 @@ public class PerfilController {
         usuario.setCep(cep.length() == 8 ? cep : null);
         usuario.setCidade(cep.length() == 8 ? Validadores.sanitizar(corpo.cidade(), 120) : null);
 
+        repositorio.salvarUsuario(usuario);
+
         repositorio.registrarAuditoria("ATUALIZAR_PERFIL", "perfil", usuario.getCpf(),
                 usuario.getCpf(), usuario.getPerfil().getValor(), null);
 
@@ -119,6 +121,7 @@ public class PerfilController {
         }
 
         usuario.setSenhaHash(encoder.encode(corpo.senhaNova()));
+        repositorio.salvarUsuario(usuario);
 
         repositorio.registrarAuditoria("TROCAR_SENHA", "perfil", usuario.getCpf(),
                 usuario.getCpf(), usuario.getPerfil().getValor(), null);

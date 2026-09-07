@@ -4,7 +4,7 @@ import br.gov.taubate.vidareal.erro.ApiException;
 import br.gov.taubate.vidareal.erro.ErroCampo;
 import br.gov.taubate.vidareal.modelo.Meta;
 import br.gov.taubate.vidareal.modelo.Usuario;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.seguranca.UsuarioLogado;
 import br.gov.taubate.vidareal.util.Validadores;
@@ -37,9 +37,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Autenticado
 public class MetaController {
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
 
-    public MetaController(RepositorioMemoria repositorio) {
+    public MetaController(Repositorio repositorio) {
         this.repositorio = repositorio;
     }
 
@@ -100,6 +100,7 @@ public class MetaController {
         meta.setTipo(tipo);
         meta.setObjetivo(corpo.objetivo());
         meta.setPrazo(prazo);
+        repositorio.salvarMeta(meta);
 
         repositorio.registrarAuditoria("ATUALIZAR_META", "metas", String.valueOf(meta.getId()),
                 usuario.getCpf(), usuario.getPerfil().getValor(), null);
@@ -119,6 +120,7 @@ public class MetaController {
         }
 
         meta.aportar(corpo.valor());
+        repositorio.salvarMeta(meta);
 
         repositorio.registrarAuditoria("APORTE_META", "metas", String.valueOf(meta.getId()),
                 usuario.getCpf(), usuario.getPerfil().getValor(),

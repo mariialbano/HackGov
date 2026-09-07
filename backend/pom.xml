@@ -41,6 +41,21 @@
       <artifactId>spring-security-crypto</artifactId>
     </dependency>
 
+    <!-- Acesso a dados em SQL puro (JdbcTemplate), sem ORM: o esquema fica
+         visivel em schema.sql e as entidades seguem objetos Java simples -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- Banco relacional embutido, gravado em arquivo: persiste entre
+         reinicios sem exigir instalacao de servidor na maquina -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

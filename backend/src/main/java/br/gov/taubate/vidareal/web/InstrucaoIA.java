@@ -1,6 +1,6 @@
 package br.gov.taubate.vidareal.web;
 
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 
 /**
  * Instrucao de sistema do assistente virtual.
@@ -52,7 +52,7 @@ final class InstrucaoIA {
             - Conta: login com CPF e senha. A senha exige maiúscula, minúscula,
               número, caractere especial e no mínimo 8 caracteres. A sessão encerra
               automaticamente após 15 minutos sem uso.
-            """.formatted(String.join("; ", RepositorioMemoria.TIPOS_PROTOCOLO));
+            """.formatted(String.join("; ", Repositorio.TIPOS_PROTOCOLO));
 
     static final String SISTEMA = """
             Você é o assistente virtual do VidaReal, plataforma pública de

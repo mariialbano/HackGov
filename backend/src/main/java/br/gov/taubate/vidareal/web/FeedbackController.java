@@ -4,7 +4,7 @@ import br.gov.taubate.vidareal.erro.ApiException;
 import br.gov.taubate.vidareal.erro.ErroCampo;
 import br.gov.taubate.vidareal.modelo.Feedback;
 import br.gov.taubate.vidareal.modelo.Perfil;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.util.Validadores;
 import java.net.URI;
@@ -29,9 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/feedbacks")
 public class FeedbackController {
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
 
-    public FeedbackController(RepositorioMemoria repositorio) {
+    public FeedbackController(Repositorio repositorio) {
         this.repositorio = repositorio;
     }
 

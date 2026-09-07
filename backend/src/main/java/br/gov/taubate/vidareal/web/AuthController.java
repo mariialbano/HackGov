@@ -4,7 +4,7 @@ import br.gov.taubate.vidareal.erro.ApiException;
 import br.gov.taubate.vidareal.erro.ErroCampo;
 import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.Usuario;
-import br.gov.taubate.vidareal.repositorio.RepositorioMemoria;
+import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.seguranca.AutenticacaoInterceptor;
 import br.gov.taubate.vidareal.seguranca.LimitadorRequisicoes;
@@ -47,7 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    private final RepositorioMemoria repositorio;
+    private final Repositorio repositorio;
     private final SessaoService sessoes;
     private final BCryptPasswordEncoder encoder;
 
@@ -58,7 +58,7 @@ public class AuthController {
      */
     private final LimitadorRequisicoes limitador;
 
-    public AuthController(RepositorioMemoria repositorio, SessaoService sessoes,
+    public AuthController(Repositorio repositorio, SessaoService sessoes,
                           BCryptPasswordEncoder encoder,
                           @Value("${vidareal.seguranca.login.limite:5}") int limite,
                           @Value("${vidareal.seguranca.login.janela-minutos:15}") int janelaMinutos) {

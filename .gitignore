@@ -14,3 +14,7 @@ backend/.env
 
 # Estado de execucao dos scripts iniciar/parar
 .run/
+
+# Banco de dados local (H2 em arquivo): e dado de execucao, nao codigo.
+# O schema.sql recria as tabelas em qualquer maquina.
+backend/data/
