@@ -51,9 +51,10 @@ VidaReal/
 
 ## Como rodar
 
-**Pré-requisitos:** [Java 21+](https://adoptium.net) e
-[Maven](https://maven.apache.org) para o backend;
-[Node.js 18+](https://nodejs.org) para o front-end.
+**Pré-requisitos:** [Java 21+](https://adoptium.net) para o backend e
+[Node.js 18+](https://nodejs.org) para o front-end. O Maven não precisa ser
+instalado: o projeto usa o Maven Wrapper (`backend/mvnw`), que baixa a
+versão correta na primeira execução.
 
 ### Modo rápido (recomendado)
 
@@ -91,7 +92,8 @@ cd backend
 .\rodar.ps1
 ```
 
-A API sobe em `http://localhost:3001`. Sem PowerShell, use `mvn spring-boot:run`.
+A API sobe em `http://localhost:3001`. Sem PowerShell, use `./mvnw spring-boot:run`
+(ou `mvnw.cmd spring-boot:run` no Windows).
 
 **Terminal 2 — front-end:**
 

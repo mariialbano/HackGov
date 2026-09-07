@@ -126,9 +126,10 @@ Write-Host '  Plataforma de transparencia publica e educacao financeira' -Foregr
 Escrever-Titulo 'Verificando pre-requisitos'
 
 $faltando = @()
+# Maven nao entra na lista: a API sobe pelo Maven Wrapper (backend\mvnw.cmd),
+# que baixa a versao certa na primeira execucao. Nada a instalar na maquina.
 foreach ($item in @(
     @{ Comando = 'java'; Nome = 'Java 21+';    Onde = 'https://adoptium.net' },
-    @{ Comando = 'mvn';  Nome = 'Maven';       Onde = 'https://maven.apache.org' },
     @{ Comando = 'npm';  Nome = 'Node.js 18+'; Onde = 'https://nodejs.org' }
 )) {
     if (Test-Comando $item.Comando) {
@@ -201,7 +202,7 @@ $processoWeb = $null
 
 try {
     Escrever-Passo "Subindo a API na porta $portaApi (a primeira compilacao demora)..."
-    $processoApi = Iniciar-Servico $dirApi 'mvn spring-boot:run' $logApi
+    $processoApi = Iniciar-Servico $dirApi 'mvnw.cmd spring-boot:run' $logApi
 
     if (-not (Aguardar-Url $urlApi 180)) {
         Escrever-Erro 'A API nao respondeu a tempo. Ultimas linhas do log:'

@@ -7,4 +7,6 @@ if (Test-Path .env) {
   }
   Write-Host "Variaveis carregadas do .env"
 }
-mvn spring-boot:run
+# Maven Wrapper: baixa a versao certa do Maven na primeira execucao,
+# entao nao e preciso ter o Maven instalado na maquina.
+.\mvnw.cmd spring-boot:run
