@@ -202,7 +202,7 @@ $processoWeb = $null
 
 try {
     Escrever-Passo "Subindo a API na porta $portaApi (a primeira compilacao demora)..."
-    $processoApi = Iniciar-Servico $dirApi 'mvnw.cmd spring-boot:run' $logApi
+    $processoApi = Iniciar-Servico $dirApi '.\mvnw.cmd spring-boot:run' $logApi
 
     if (-not (Aguardar-Url $urlApi 180)) {
         Escrever-Erro 'A API nao respondeu a tempo. Ultimas linhas do log:'
