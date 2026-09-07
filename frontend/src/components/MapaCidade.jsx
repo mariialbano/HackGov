@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Layers, GraduationCap, HeartPulse, Cross, Trees, Shield } from 'lucide-react';
+import {
+  Layers, GraduationCap, HeartPulse, Cross, Trees, Shield,
+  Banknote, Building2, HeartHandshake,
+} from 'lucide-react';
 import { obterMalhaMunicipio, obterPontosMunicipio } from '../api/dadosPublicosService';
 
 // Mapa de um município (Leaflet + camadas abertas).
@@ -59,10 +62,15 @@ const CAMADAS = [
 // Equipamentos públicos que podem ser marcados no mapa. A cor identifica a
 // categoria e o ícone repete a informação em forma — quem não distingue as
 // cores continua diferenciando os alfinetes.
+// Todas as cores foram escolhidas escuras o bastante para carregar texto
+// branco em cima: a menor razão de contraste da lista é 4,58:1 (Parques).
 const CATEGORIAS = {
   saude: { nome: 'Saúde', cor: '#cf3131', Icone: HeartPulse },
   educacao: { nome: 'Educação', cor: '#1d6fd0', Icone: GraduationCap },
   farmacia: { nome: 'Farmácias', cor: '#7b3fb8', Icone: Cross },
+  bancos: { nome: 'Bancos', cor: '#0f766e', Icone: Banknote },
+  publicos: { nome: 'Órgãos públicos', cor: '#334155', Icone: Building2 },
+  assistencia: { nome: 'Assistência social', cor: '#be185d', Icone: HeartHandshake },
   lazer: { nome: 'Parques', cor: '#278553', Icone: Trees },
   seguranca: { nome: 'Segurança', cor: '#8a6d1f', Icone: Shield },
 };

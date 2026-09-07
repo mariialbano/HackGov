@@ -471,15 +471,36 @@ public class DadosPublicosService {
     private static final String OVERPASS = "https://overpass-api.de/api/interpreter";
 
     /** Uma categoria de ponto no mapa, com o filtro que a seleciona no OSM. */
-    private record Categoria(String chave, String nome, String filtro) {
+    /**
+     * Uma categoria de ponto no mapa.
+     *
+     * <p>Alguns equipamentos sao marcados de mais de uma forma no OSM &mdash;
+     * um orgao publico pode ser {@code amenity=townhall} ou
+     * {@code office=government} &mdash;, por isso a categoria carrega uma
+     * <b>lista</b> de filtros.</p>
+     */
+    private record Categoria(String chave, String nome, List<String> filtros) {
     }
 
     private static final List<Categoria> CATEGORIAS = List.of(
-            new Categoria("saude", "Saúde", "[\"amenity\"~\"^(hospital|clinic|doctors)$\"]"),
-            new Categoria("educacao", "Educação", "[\"amenity\"=\"school\"]"),
-            new Categoria("farmacia", "Farmácias", "[\"amenity\"=\"pharmacy\"]"),
-            new Categoria("lazer", "Parques", "[\"leisure\"=\"park\"]"),
-            new Categoria("seguranca", "Segurança", "[\"amenity\"=\"police\"]"));
+            new Categoria("saude", "Saúde",
+                    List.of("[\"amenity\"~\"^(hospital|clinic|doctors)$\"]")),
+            // Creches entram junto das escolas: para o cidadao as duas
+            // respondem a mesma pergunta, "onde estudam as criancas daqui".
+            new Categoria("educacao", "Educação",
+                    List.of("[\"amenity\"~\"^(school|kindergarten)$\"]")),
+            new Categoria("farmacia", "Farmácias",
+                    List.of("[\"amenity\"=\"pharmacy\"]")),
+            new Categoria("bancos", "Bancos",
+                    List.of("[\"amenity\"~\"^(bank|atm)$\"]")),
+            new Categoria("publicos", "Órgãos públicos",
+                    List.of("[\"amenity\"=\"townhall\"]", "[\"office\"=\"government\"]")),
+            new Categoria("assistencia", "Assistência social",
+                    List.of("[\"amenity\"=\"social_facility\"]")),
+            new Categoria("lazer", "Parques",
+                    List.of("[\"leisure\"=\"park\"]")),
+            new Categoria("seguranca", "Segurança",
+                    List.of("[\"amenity\"=\"police\"]")));
 
     /** Teto por categoria: um mapa com centenas de alfinetes vira mancha. */
     private static final int MAXIMO_POR_CATEGORIA = 120;
@@ -505,7 +526,9 @@ public class DadosPublicosService {
             StringBuilder consulta = new StringBuilder("[out:json][timeout:90];");
             consulta.append("area[\"IBGE:GEOCODIGO\"=\"").append(idIbge).append("\"]->.a;(");
             for (Categoria c : CATEGORIAS) {
-                consulta.append("nwr").append(c.filtro()).append("(area.a);");
+                for (String filtro : c.filtros()) {
+                    consulta.append("nwr").append(filtro).append("(area.a);");
+                }
             }
             consulta.append(");out center;");
 
@@ -568,14 +591,25 @@ public class DadosPublicosService {
         String amenity = tags.path("amenity").asText("");
         String leisure = tags.path("leisure").asText("");
 
+        String office = tags.path("office").asText("");
+
         if (amenity.equals("hospital") || amenity.equals("clinic") || amenity.equals("doctors")) {
             return "saude";
         }
-        if (amenity.equals("school")) {
+        if (amenity.equals("school") || amenity.equals("kindergarten")) {
             return "educacao";
         }
         if (amenity.equals("pharmacy")) {
             return "farmacia";
+        }
+        if (amenity.equals("bank") || amenity.equals("atm")) {
+            return "bancos";
+        }
+        if (amenity.equals("townhall") || office.equals("government")) {
+            return "publicos";
+        }
+        if (amenity.equals("social_facility")) {
+            return "assistencia";
         }
         if (leisure.equals("park")) {
             return "lazer";

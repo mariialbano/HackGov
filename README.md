@@ -15,7 +15,7 @@ Taubaté/SP.
 - **Indicadores Municipais** — população, PIB, PIB por habitante, saneamento,
   IDEB, escolarização e salário médio de qualquer município do país (escolha
   por estado), com mapa em quatro camadas, o contorno real do território e
-  camadas de equipamentos públicos (escolas, saúde, farmácias, parques)
+  oito camadas de equipamentos públicos
 - **Comparativo entre municípios** — duas cidades quaisquer lado a lado, com
   atalho para a cidade do próprio cadastro (área restrita ao perfil atendente)
 - **Dados abertos de governo** — IPCA e Selic do Banco Central, feriados nacionais,
@@ -227,7 +227,7 @@ A plataforma consome cinco fontes públicas, todas gratuitas e sem chave de aces
 | **Nominatim (OSM)** | Coordenadas do município | Mapa dos Indicadores |
 | **IBGE Malhas** | Contorno do município (GeoJSON) | Desenho do limite no mapa |
 | **Esri / OpenTopoMap / CARTO** | Camadas de satélite, relevo e base limpa | Tipos de mapa |
-| **OpenStreetMap (Overpass)** | Escolas, saúde, farmácias, parques e segurança | Camadas de pontos no mapa |
+| **OpenStreetMap (Overpass)** | Saúde, educação, farmácias, bancos, órgãos públicos, assistência social, parques e segurança | Camadas de pontos no mapa |
 
 **Quem consulta é o backend, nunca o navegador.** O front-end pede a
 `/api/v1/dados/...` e a API busca na origem. Isso evita bloqueio por CORS,
