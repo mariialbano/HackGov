@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 
 // Importando as Páginas
 import Login from './pages/Login';
@@ -18,11 +18,44 @@ import FeedbackModal from './components/FeedbackModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import Rodape from './components/Rodape';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 
-function App() {
+// Login e cadastro vêm antes da sessão: ali o chat e a avaliação
+// disputariam atenção com o formulário.
+const SEM_ATALHOS = ['/', '/cadastro'];
+
+function AtalhosFlutuantes() {
+  const { isAuthenticated } = useAuth();
+  const { pathname } = useLocation();
+
+  // A rota também conta: o login espera um instante antes de ir para o
+  // painel, e só a sessão faria os botões piscarem na tela de entrada.
+  if (!isAuthenticated || SEM_ATALHOS.includes(pathname)) return null;
+
+  // Desmontar, em vez de só esconder, zera a conversa ao sair da conta:
+  // quem entrar em seguida no mesmo navegador não vê a anterior.
+  return <ChatEAvaliacao />;
+}
+
+function ChatEAvaliacao() {
   // Estado para controlar a abertura do modal de estrelas
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
+  return (
+    <>
+      {/* Injeta a função de abrir o feedback ao clicar na estrela verde do chatbot */}
+      <ChatbotIA onOpenFeedback={() => setIsFeedbackOpen(true)} />
+
+      {/* Renderiza o Modal na tela se o estado for verdadeiro */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+      />
+    </>
+  );
+}
+
+function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -54,14 +87,8 @@ function App() {
             no login e no cadastro, que têm composição de tela cheia). */}
         <Rodape />
 
-        {/* Injeta a função de abrir o feedback ao clicar na estrela verde do chatbot */}
-        <ChatbotIA onOpenFeedback={() => setIsFeedbackOpen(true)} />
-
-        {/* Renderiza o Modal na tela se o estado for verdadeiro */}
-        <FeedbackModal
-          isOpen={isFeedbackOpen}
-          onClose={() => setIsFeedbackOpen(false)}
-        />
+        {/* Chat e avaliação: somente depois do login */}
+        <AtalhosFlutuantes />
       </BrowserRouter>
     </AuthProvider>
   );
