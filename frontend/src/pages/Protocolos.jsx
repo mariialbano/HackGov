@@ -7,10 +7,12 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import StatusMessage from '../components/StatusMessage';
 import StatusBadge from '../components/StatusBadge';
+import PrioridadeBadge from '../components/PrioridadeBadge';
+import SugestaoTriagem from '../components/SugestaoTriagem';
 import Button from '../components/Button';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, X, FileText, Pencil, Trash2, Eye, Loader2, RefreshCw, Check, CalendarClock, Download } from 'lucide-react';
+import { Plus, X, FileText, Pencil, Trash2, Eye, Loader2, RefreshCw, Check, CalendarClock, Download, ArrowDownWideNarrow } from 'lucide-react';
 import { PROTOCOLO_TIPOS, STATUS_OPCOES, getStatusOpcao, formatarData } from '../utils/protocoloUtils';
 import { obterPrazo } from '../api/dadosPublicosService';
 import { novoRelatorio } from '../utils/relatorioPdf';
@@ -83,6 +85,8 @@ export default function Protocolos() {
   const [enviando, setEnviando] = useState(false);
   const [erroFormulario, setErroFormulario] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('');
+  // Fila de atendimento por prioridade (triagem): recurso do atendente.
+  const [ordemPrioridade, setOrdemPrioridade] = useState(false);
 
   const [modalMode, setModalMode] = useState(null);
   const [detailProtocolo, setDetailProtocolo] = useState(null);
@@ -106,6 +110,7 @@ export default function Protocolos() {
       try {
         const resposta = await listarProtocolos({
           status: filtroStatus || undefined,
+          ordem: ordemPrioridade ? 'prioridade' : undefined,
           limite: 50,
         });
         if (ehValida()) setProtocolos(resposta.dados);
@@ -115,7 +120,7 @@ export default function Protocolos() {
         if (ehValida()) setCarregando(false);
       }
     },
-    [filtroStatus]
+    [filtroStatus, ordemPrioridade]
   );
 
   useEffect(() => {
@@ -352,10 +357,32 @@ export default function Protocolos() {
             );
           })}
 
+          {ehAtendente && (
+            <button
+              type="button"
+              onClick={() => setOrdemPrioridade((atual) => !atual)}
+              aria-pressed={ordemPrioridade}
+              title="Pendentes primeiro, da maior para a menor prioridade"
+              className={[
+                'ml-auto flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150',
+                ordemPrioridade
+                  ? 'border-brand bg-brand text-on-brand'
+                  : 'border-ink-200 bg-surface text-ink-600 hover:border-ink-300 hover:text-ink-900',
+              ].join(' ')}
+            >
+              <ArrowDownWideNarrow size={13} aria-hidden="true" />
+              Ordenar por prioridade
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => carregarProtocolos()}
-            className="ml-auto flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900"
+            className={[
+              // Quando o botão de ordenar existe, é ele quem empurra o grupo para a direita
+              ehAtendente ? '' : 'ml-auto',
+              'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900',
+            ].join(' ')}
             title="Recarregar da API"
           >
             <RefreshCw size={13} className={carregando ? 'animate-spin' : ''} aria-hidden="true" />
@@ -435,6 +462,8 @@ export default function Protocolos() {
 
                     <div className="flex shrink-0 items-center gap-2 sm:flex-col sm:items-end">
                       <StatusBadge progresso={prot.progresso}>{prot.status}</StatusBadge>
+                      {/* A API só envia a triagem para o atendente */}
+                      <PrioridadeBadge nivel={prot.triagem?.prioridade} />
 
                       {/* Em telas de toque não existe hover: as ações ficam
                           sempre visíveis. A partir de sm elas recuam e
@@ -569,6 +598,13 @@ export default function Protocolos() {
                 />
               </FormField>
 
+              {/* Triagem inteligente: a IA sugere, o cidadão decide */}
+              <SugestaoTriagem
+                descricao={formData.descricao}
+                tipoAtual={formData.tipo}
+                onUsar={(tipo) => updateField('tipo', tipo)}
+              />
+
               {erroFormulario && <StatusMessage type="error" message={erroFormulario} />}
 
               {!isEditing && !erroFormulario && (
@@ -594,7 +630,7 @@ export default function Protocolos() {
       {/* -------------------- Modal: detalhes -------------------- */}
       {detailProtocolo && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/45 p-4 backdrop-blur-[2px]">
-          <div className="surface-in w-full max-w-md overflow-hidden rounded-[var(--radius-card)] bg-surface shadow-overlay">
+          <div className="surface-in max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[var(--radius-card)] bg-surface shadow-overlay">
             <div className="flex items-center justify-between border-b border-ink-200 px-6 py-4">
               <h2 className="font-display text-lg font-bold text-ink-900">Detalhes do protocolo</h2>
               <button
@@ -660,6 +696,43 @@ export default function Protocolos() {
                   {detailProtocolo.descricao || 'Nenhuma descrição registrada.'}
                 </dd>
               </div>
+
+              {/* Triagem: informação interna, enviada pela API só ao atendente */}
+              {detailProtocolo.triagem && (
+                <div className="py-3">
+                  <dt className="flex items-center justify-between gap-4">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+                      Prioridade
+                    </span>
+                    <PrioridadeBadge nivel={detailProtocolo.triagem.prioridade} />
+                  </dt>
+                  <dd className="mt-2 text-sm text-ink-700">
+                    <p className="text-xs text-ink-500">
+                      {detailProtocolo.triagem.pontos} ponto(s), por regras fixas:
+                    </p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs leading-relaxed">
+                      {detailProtocolo.triagem.motivos.map((motivo) => (
+                        <li key={motivo}>{motivo}</li>
+                      ))}
+                    </ul>
+
+                    <p className="mt-3 text-xs leading-relaxed text-ink-600">
+                      <span className="font-semibold text-ink-800">Categoria sugerida pela IA:</span>{' '}
+                      {detailProtocolo.triagem.tipoSugerido ? (
+                        <>
+                          {detailProtocolo.triagem.tipoSugerido} (confiança relativa de{' '}
+                          {Math.round(detailProtocolo.triagem.confiancaSugestao * 100)}%) —{' '}
+                          {detailProtocolo.triagem.sugestaoAceita
+                            ? 'igual à escolhida pelo cidadão.'
+                            : 'o cidadão escolheu outra categoria.'}
+                        </>
+                      ) : (
+                        'sem sugestão para esta descrição.'
+                      )}
+                    </p>
+                  </dd>
+                </div>
+              )}
             </dl>
 
             <div className="flex flex-wrap gap-3 border-t border-ink-200 bg-ink-050 p-4">

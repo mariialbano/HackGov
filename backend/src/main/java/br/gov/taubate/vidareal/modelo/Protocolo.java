@@ -13,6 +13,13 @@ public class Protocolo {
     private final Instant abertoEm;
     private Instant concluidoEm;
 
+    // Triagem: informacao interna do atendimento, calculada pelo servidor.
+    private String prioridade;
+    private Integer prioridadePontos;
+    private String prioridadeMotivos;
+    private String tipoSugerido;
+    private Double confiancaSugestao;
+
     public Protocolo(String id, String cpfSolicitante, String tipo, String descricao,
                      EtapaProtocolo etapa, Instant abertoEm, Instant concluidoEm) {
         this.id = id;
@@ -58,6 +65,38 @@ public class Protocolo {
 
     public Instant getConcluidoEm() {
         return concluidoEm;
+    }
+
+    public String getPrioridade() {
+        return prioridade;
+    }
+
+    public Integer getPrioridadePontos() {
+        return prioridadePontos;
+    }
+
+    /** Motivos da prioridade, separados por " | ". */
+    public String getPrioridadeMotivos() {
+        return prioridadeMotivos;
+    }
+
+    /** Categoria sugerida pelo classificador; nula quando ele nao sugeriu. */
+    public String getTipoSugerido() {
+        return tipoSugerido;
+    }
+
+    public Double getConfiancaSugestao() {
+        return confiancaSugestao;
+    }
+
+    /** Registra o resultado da triagem feita na abertura ou na edicao. */
+    public void registrarTriagem(String prioridade, Integer prioridadePontos, String prioridadeMotivos,
+                                 String tipoSugerido, Double confiancaSugestao) {
+        this.prioridade = prioridade;
+        this.prioridadePontos = prioridadePontos;
+        this.prioridadeMotivos = prioridadeMotivos;
+        this.tipoSugerido = tipoSugerido;
+        this.confiancaSugestao = confiancaSugestao;
     }
 
     /**

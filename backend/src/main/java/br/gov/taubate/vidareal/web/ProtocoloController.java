@@ -8,12 +8,16 @@ import br.gov.taubate.vidareal.modelo.Protocolo;
 import br.gov.taubate.vidareal.modelo.Usuario;
 import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
+import br.gov.taubate.vidareal.seguranca.LimitadorRequisicoes;
 import br.gov.taubate.vidareal.seguranca.UsuarioLogado;
+import br.gov.taubate.vidareal.triagem.TriagemService;
 import br.gov.taubate.vidareal.util.Validadores;
 import br.gov.taubate.vidareal.web.dto.Pagina;
 import br.gov.taubate.vidareal.web.dto.ProtocoloRequest;
 import br.gov.taubate.vidareal.web.dto.ProtocoloResposta;
 import br.gov.taubate.vidareal.web.dto.StatusRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,6 +26,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +46,10 @@ import org.springframework.web.bind.annotation.RestController;
  * protocolos; o atendente enxerga todos. Ao pedir um protocolo de outra
  * pessoa a API responde 404 &mdash; e nao 403 &mdash; para nao confirmar
  * que aquele registro existe.</p>
+ *
+ * <p>Triagem: a sugestao de categoria (IA) atende o cidadao na abertura; a
+ * prioridade e o que o classificador sugeriu sao informacao interna do
+ * atendimento e so saem na resposta para o atendente.</p>
  */
 @RestController
 @RequestMapping("/api/v1/protocolos")
@@ -51,9 +60,20 @@ public class ProtocoloController {
     private static final int DESCRICAO_MAXIMA = 1000;
 
     private final Repositorio repositorio;
+    private final TriagemService triagem;
 
-    public ProtocoloController(Repositorio repositorio) {
+    /** A sugestao e consultada enquanto o cidadao digita: o limite evita abuso. */
+    private final LimitadorRequisicoes limitadorSugestao;
+
+    public ProtocoloController(Repositorio repositorio, TriagemService triagem,
+                               @Value("${vidareal.seguranca.triagem.limite:60}") int limiteSugestao) {
         this.repositorio = repositorio;
+        this.triagem = triagem;
+        this.limitadorSugestao = new LimitadorRequisicoes(limiteSugestao, Duration.ofMinutes(1));
+    }
+
+    /** Corpo do pedido de sugestao de categoria. */
+    public record SugestaoRequest(String descricao) {
     }
 
     // ---------- GET /protocolos ----------
@@ -63,18 +83,27 @@ public class ProtocoloController {
             @UsuarioLogado Usuario usuario,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String ordem,
             @RequestParam(defaultValue = "1") int pagina,
             @RequestParam(defaultValue = "20") int limite) {
 
         int paginaSegura = Math.max(1, pagina);
         int limiteSeguro = Math.min(Math.max(1, limite), 100);
 
+        boolean porPrioridade = "prioridade".equalsIgnoreCase(ordem);
+        if (porPrioridade && !ehAtendente(usuario)) {
+            throw ApiException.proibido(
+                    "Apenas o atendente público pode ordenar a fila por prioridade.");
+        }
+
         List<ProtocoloResposta> resultado = repositorio.listarProtocolos().stream()
                 .filter(p -> podeVer(usuario, p))
                 .filter(p -> status == null || p.getEtapa().getStatus().equalsIgnoreCase(status))
                 .filter(p -> tipo == null || p.getTipo().toLowerCase().contains(tipo.toLowerCase()))
-                .sorted(Comparator.comparing(Protocolo::getAbertoEm).reversed())
-                .map(ProtocoloResposta::de)
+                .sorted(porPrioridade
+                        ? FILA_POR_PRIORIDADE
+                        : Comparator.comparing(Protocolo::getAbertoEm).reversed())
+                .map(p -> ProtocoloResposta.de(p, ehAtendente(usuario)))
                 .toList();
 
         return Pagina.de(resultado, paginaSegura, limiteSeguro);
@@ -140,11 +169,58 @@ public class ProtocoloController {
         return resposta;
     }
 
+    // ---------- POST /protocolos/sugestao ----------
+    // POST, e nao GET: a descricao e texto do cidadao e nao deve ir na URL,
+    // que acaba em log de servidor e historico de navegador.
+
+    @PostMapping("/sugestao")
+    public Map<String, Object> sugerir(@RequestBody SugestaoRequest corpo,
+                                       HttpServletRequest requisicao,
+                                       HttpServletResponse resposta) {
+        String ip = requisicao.getRemoteAddr();
+        if (!limitadorSugestao.permitir(ip)) {
+            resposta.setHeader("Retry-After", String.valueOf(limitadorSugestao.segundosParaLiberar(ip)));
+            throw ApiException.muitasRequisicoes(
+                    "Muitas consultas de sugestão em pouco tempo. Aguarde um instante.");
+        }
+
+        if (corpo.descricao() == null) {
+            throw ApiException.requisicaoInvalida("Dados inválidos na requisição.",
+                    List.of(new ErroCampo("descricao", "Obrigatório (texto).")));
+        }
+
+        String descricao = Validadores.sanitizar(corpo.descricao(), DESCRICAO_MAXIMA);
+
+        Map<String, Object> saida = new LinkedHashMap<>();
+        if (descricao.length() < DESCRICAO_MINIMA) {
+            saida.put("sugestao", null);
+            saida.put("motivo", "Escreva pelo menos " + DESCRICAO_MINIMA
+                    + " caracteres para receber uma sugestão.");
+            saida.put("alternativas", List.of());
+        } else {
+            TriagemService.Analise analise = triagem.sugerir(descricao);
+            saida.put("sugestao", analise.sugestao());
+            saida.put("motivo", analise.motivo());
+            saida.put("alternativas", analise.alternativas());
+        }
+        saida.put("aviso", TriagemService.AVISO_CONFIANCA);
+        return saida;
+    }
+
+    // ---------- GET /protocolos/triagem/modelo ----------
+
+    /** Ficha do modelo e do dataset: transparencia e auditoria da IA. */
+    @GetMapping("/triagem/modelo")
+    @Autenticado(perfis = Perfil.ATENDENTE)
+    public Map<String, Object> modeloTriagem() {
+        return triagem.descreverModelo();
+    }
+
     // ---------- GET /protocolos/{id} ----------
 
     @GetMapping("/{id}")
     public ProtocoloResposta detalhar(@UsuarioLogado Usuario usuario, @PathVariable String id) {
-        return ProtocoloResposta.de(buscarOuFalhar(usuario, id));
+        return ProtocoloResposta.de(buscarOuFalhar(usuario, id), ehAtendente(usuario));
     }
 
     // ---------- POST /protocolos ----------
@@ -165,13 +241,17 @@ public class ProtocoloController {
                 Instant.now(),
                 null);
 
+        // A triagem e refeita aqui, a partir do que foi gravado: o servidor
+        // nao confia na sugestao que o navegador exibiu.
+        triagem.triar(novo);
+
         repositorio.adicionarProtocolo(novo);
         repositorio.registrarAuditoria("CRIAR_PROTOCOLO", "protocolos", novo.getId(),
                 usuario.getCpf(), usuario.getPerfil().getValor(), null);
 
         return ResponseEntity
                 .created(URI.create("/api/v1/protocolos/" + novo.getId()))
-                .body(ProtocoloResposta.de(novo));
+                .body(ProtocoloResposta.de(novo, ehAtendente(usuario)));
     }
 
     // ---------- PUT /protocolos/{id} ----------
@@ -198,13 +278,14 @@ public class ProtocoloController {
         protocolo.setTipo(tipo);
         protocolo.setDescricao(descricao);
         protocolo.moverPara(novaEtapa);
+        triagem.triar(protocolo); // tipo ou descricao podem ter mudado
         repositorio.salvarProtocolo(protocolo);
 
         repositorio.registrarAuditoria("ATUALIZAR_PROTOCOLO", "protocolos", protocolo.getId(),
                 usuario.getCpf(), usuario.getPerfil().getValor(),
                 "status: " + anterior + " -> " + novaEtapa.getStatus());
 
-        return ProtocoloResposta.de(protocolo);
+        return ProtocoloResposta.de(protocolo, ehAtendente(usuario));
     }
 
     // ---------- PATCH /protocolos/{id}/status ----------
@@ -238,7 +319,7 @@ public class ProtocoloController {
                 usuario.getCpf(), usuario.getPerfil().getValor(),
                 anterior + " -> " + novaEtapa.getStatus());
 
-        return ProtocoloResposta.de(protocolo);
+        return ProtocoloResposta.de(protocolo, ehAtendente(usuario));
     }
 
     // ---------- DELETE /protocolos/{id} ----------
@@ -256,8 +337,22 @@ public class ProtocoloController {
 
     // ---------- apoio ----------
 
+    /**
+     * Fila de atendimento: pendentes antes dos concluidos, depois a maior
+     * pontuacao de prioridade e, no empate, quem chegou primeiro (FIFO).
+     */
+    private static final Comparator<Protocolo> FILA_POR_PRIORIDADE = Comparator
+            .comparing((Protocolo p) -> p.getEtapa() == EtapaProtocolo.CONCLUIDO)
+            .thenComparing(p -> p.getPrioridadePontos() == null ? 0 : p.getPrioridadePontos(),
+                    Comparator.reverseOrder())
+            .thenComparing(Protocolo::getAbertoEm);
+
+    private boolean ehAtendente(Usuario usuario) {
+        return usuario.getPerfil() == Perfil.ATENDENTE;
+    }
+
     private boolean podeVer(Usuario usuario, Protocolo protocolo) {
-        return usuario.getPerfil() == Perfil.ATENDENTE
+        return ehAtendente(usuario)
                 || protocolo.getCpfSolicitante().equals(usuario.getCpf());
     }
 

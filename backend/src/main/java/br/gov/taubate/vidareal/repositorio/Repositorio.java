@@ -198,16 +198,26 @@ public class Repositorio {
     // ---------- Protocolos ----------
 
     private static final String COLUNAS_PROTOCOLO =
-            "id, cpf_solicitante, tipo, descricao, etapa, aberto_em, concluido_em";
+            "id, cpf_solicitante, tipo, descricao, etapa, aberto_em, concluido_em, "
+                    + "prioridade, prioridade_pontos, prioridade_motivos, tipo_sugerido, confianca_sugestao";
 
-    private static final RowMapper<Protocolo> MAPA_PROTOCOLO = (rs, linha) -> new Protocolo(
-            rs.getString("id"),
-            rs.getString("cpf_solicitante"),
-            rs.getString("tipo"),
-            rs.getString("descricao"),
-            EtapaProtocolo.valueOf(rs.getString("etapa")),
-            lerInstante(rs, "aberto_em"),
-            lerInstante(rs, "concluido_em"));
+    private static final RowMapper<Protocolo> MAPA_PROTOCOLO = (rs, linha) -> {
+        Protocolo protocolo = new Protocolo(
+                rs.getString("id"),
+                rs.getString("cpf_solicitante"),
+                rs.getString("tipo"),
+                rs.getString("descricao"),
+                EtapaProtocolo.valueOf(rs.getString("etapa")),
+                lerInstante(rs, "aberto_em"),
+                lerInstante(rs, "concluido_em"));
+        protocolo.registrarTriagem(
+                rs.getString("prioridade"),
+                rs.getObject("prioridade_pontos", Integer.class),
+                rs.getString("prioridade_motivos"),
+                rs.getString("tipo_sugerido"),
+                rs.getObject("confianca_sugestao", Double.class));
+        return protocolo;
+    };
 
     /** Ordem de chegada preservada (FIFO). */
     public List<Protocolo> listarProtocolos() {
@@ -222,21 +232,30 @@ public class Repositorio {
     }
 
     public void adicionarProtocolo(Protocolo protocolo) {
-        jdbc.update("INSERT INTO protocolo (" + COLUNAS_PROTOCOLO + ") VALUES (?, ?, ?, ?, ?, ?, ?)",
+        jdbc.update("INSERT INTO protocolo (" + COLUNAS_PROTOCOLO
+                        + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 protocolo.getId(), protocolo.getCpfSolicitante(), protocolo.getTipo(),
                 protocolo.getDescricao(), protocolo.getEtapa().name(),
-                paraBanco(protocolo.getAbertoEm()), paraBanco(protocolo.getConcluidoEm()));
+                paraBanco(protocolo.getAbertoEm()), paraBanco(protocolo.getConcluidoEm()),
+                protocolo.getPrioridade(), protocolo.getPrioridadePontos(),
+                protocolo.getPrioridadeMotivos(), protocolo.getTipoSugerido(),
+                protocolo.getConfiancaSugestao());
     }
 
-    /** Grava a tramitacao e a edicao de um protocolo. */
+    /** Grava a tramitacao, a edicao e a triagem de um protocolo. */
     public void salvarProtocolo(Protocolo protocolo) {
         jdbc.update("""
                 UPDATE protocolo
-                   SET tipo = ?, descricao = ?, etapa = ?, concluido_em = ?
+                   SET tipo = ?, descricao = ?, etapa = ?, concluido_em = ?,
+                       prioridade = ?, prioridade_pontos = ?, prioridade_motivos = ?,
+                       tipo_sugerido = ?, confianca_sugestao = ?
                  WHERE id = ?
                 """,
                 protocolo.getTipo(), protocolo.getDescricao(), protocolo.getEtapa().name(),
-                paraBanco(protocolo.getConcluidoEm()), protocolo.getId());
+                paraBanco(protocolo.getConcluidoEm()),
+                protocolo.getPrioridade(), protocolo.getPrioridadePontos(),
+                protocolo.getPrioridadeMotivos(), protocolo.getTipoSugerido(),
+                protocolo.getConfiancaSugestao(), protocolo.getId());
     }
 
     public void removerProtocolo(Protocolo protocolo) {

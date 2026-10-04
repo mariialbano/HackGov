@@ -20,6 +20,8 @@ Taubaté/SP.
   atalho para a cidade do próprio cadastro (área restrita ao perfil atendente)
 - **Dados abertos de governo** — IPCA e Selic do Banco Central, feriados nacionais,
   população e PIB do IBGE, endereço por CEP
+- **Triagem inteligente de protocolos (IA)** — a plataforma sugere a categoria a partir da
+  descrição (classificador Naive Bayes, local) e calcula a prioridade de atendimento
 - **Chatbot com IA** — assistente virtual integrado à API do Google Gemini
 - **Feedback** — avaliação da experiência com nota e comentário
 - **Exportação em PDF** — relatório da simulação de inflação e comprovante de protocolo
@@ -44,6 +46,7 @@ VidaReal/
         ├── modelo/        # entidades de domínio e enums
         ├── repositorio/   # camada de dados
         ├── seguranca/     # sessão, RBAC e limite de requisições
+        ├── triagem/       # IA: classificador Naive Bayes e regras de prioridade
         ├── erro/          # exceções e tratamento central
         ├── web/           # um controller por recurso da API
         └── config/        # CORS, interceptors e log técnico
@@ -128,6 +131,7 @@ todos os endpoints disponíveis.
 | **Autenticação** | `POST /auth/cadastro` · `POST /auth/login` · `GET /auth/me` · `POST /auth/logout` |
 | **Perfil** | `GET`/`PUT` `/perfil` · `PATCH /perfil/senha` |
 | **Protocolos** | `GET`/`POST` `/protocolos` · `GET`/`PUT`/`DELETE` `/protocolos/:id` · `PATCH /protocolos/:id/status` · `GET /protocolos/estatisticas` |
+| **Triagem (IA)** | `POST /protocolos/sugestao` · `GET /protocolos/triagem/modelo` (atendente) · `GET /protocolos?ordem=prioridade` (atendente) |
 | **Metas** | `GET`/`POST` `/metas` · `GET`/`PUT`/`DELETE` `/metas/:id` · `PATCH /metas/:id/aporte` |
 | **Feedbacks** | `POST /feedbacks` · `GET /feedbacks` (atendente) |
 | **Chat (IA)** | `POST /chat` |
@@ -210,6 +214,109 @@ protocolos):
      Perfil.ATENDENTE)` marca o endpoint e um interceptor a aplica antes
      do controller executar.
 - Mitiga XSS, injeção de conteúdo malicioso e abuso da API de IA.
+
+## Triagem inteligente de protocolos (IA)
+
+Ao abrir um protocolo, o cidadão escreve a descrição e a plataforma **sugere a
+categoria**; o atendente recebe cada protocolo com uma **prioridade** e pode
+ordenar a fila por ela. São duas técnicas diferentes, e a diferença importa:
+
+| O quê | Técnica | É aprendizado de máquina? |
+|---|---|---|
+| Categoria sugerida | Classificador **Naive Bayes Multinomial** | Sim |
+| Prioridade | **Regras determinísticas** com pontuação | Não |
+
+A prioridade não foi "prevista" por um modelo porque não existe histórico de
+protocolos com prioridade rotulada para treinar um.
+
+Tudo roda dentro da própria API, em Java puro: **sem Gemini, sem API externa,
+sem chave, sem internet e sem dependência nova**. O mesmo texto recebe sempre
+a mesma resposta.
+
+### Fluxo
+
+1. O cidadão digita a descrição em **Protocolos → Abrir protocolo**.
+2. Após uma pausa na digitação, a tela chama `POST /api/v1/protocolos/sugestao`.
+3. O servidor classifica e devolve a categoria, a confiança e os termos que pesaram.
+4. A tela mostra o painel **Sugestão da IA** com o botão **Usar esta categoria**.
+   O campo de categoria nunca muda sozinho: **a escolha final é do cidadão**.
+5. No envio, o servidor refaz a triagem (não confia no que o navegador exibiu)
+   e grava prioridade, motivos, categoria sugerida e confiança.
+6. O **atendente** vê o selo de prioridade em cada protocolo, os motivos e a
+   categoria sugerida nos detalhes, e o botão **Ordenar por prioridade**.
+
+O cidadão não recebe a prioridade nem os motivos: a API só inclui o bloco
+`triagem` na resposta quando quem pede é o atendente.
+
+### Classificador de categoria
+
+- **Representação:** *bag-of-words* com unigramas e bigramas, depois de passar
+  para minúsculas, remover acentos e *stopwords*, reduzir plurais e trocar
+  todo número por um termo único.
+- **Treino:** contagem em passada única na subida da API, com suavização de
+  Laplace. Não há sorteio nem iteração.
+- **Explicação:** os termos exibidos são os de maior diferença entre o log da
+  verossimilhança na categoria vencedora e a média nas demais.
+- **Complexidade:** treino O(N·L); classificação O(C·n), linear no tamanho da
+  descrição (N exemplos, L termos por exemplo, C = 5 categorias, n termos no
+  texto).
+
+**Sobre a confiança:** é uma medida **relativa entre as cinco categorias**
+(softmax das pontuações, amortecido pela raiz do número de termos). **Não é
+uma probabilidade calibrada de acerto.** Abaixo de 0,45, ou com menos de três
+palavras conhecidas, o sistema prefere não sugerir.
+
+### Dataset
+
+O arquivo [`backend/src/main/resources/ia/dataset-protocolos.json`](backend/src/main/resources/ia/dataset-protocolos.json)
+traz a versão, a origem e os 180 exemplos (36 por categoria):
+
+> Dataset sintético curado para protótipo acadêmico, elaborado manualmente com
+> exemplos representativos das cinco categorias do HackGov, sem utilização de
+> dados pessoais ou protocolos reais de cidadãos.
+
+As categorias são as cinco de `Repositorio.TIPOS_PROTOCOLO`: Análise de
+viabilidade de Metas Financeiras, Dúvida sobre inflação, Solicitação de
+orientação financeira, Problema técnico e Sugestão de melhoria. Há frases
+formais, coloquiais e casos de fronteira entre categorias.
+
+Com o backend rodando, `GET /api/v1/protocolos/triagem/modelo` (atendente)
+devolve a ficha do modelo: algoritmo, versão do dataset, categorias, exemplos
+por categoria, tamanho do vocabulário, acurácia e a lista dos exemplos.
+
+Na validação *leave-one-out* sobre o próprio dataset (v1.0.0) a categoria mais
+pontuada é a correta em **86,7%** dos casos. Com o limite de 0,45, a sugestão é
+exibida em cerca de 79% dos casos e, quando exibida, está correta em cerca de 92%.
+
+### Regras de prioridade
+
+| Fator | Exemplos | Pontos |
+|---|---|---|
+| Categoria "Problema técnico" | — | +2 |
+| Categoria de orientação financeira ou análise de metas | — | +1 |
+| Relato de impedimento de uso | "não consigo", "não carrega", "travou", "erro" | +2 |
+| Indício de vulnerabilidade financeira | "dívida", "negativado", "desempregado", "despejo" | +2 |
+| Urgência declarada | "urgente", "hoje", "amanhã", "prazo vence" | +1 |
+
+Cada fator conta uma única vez, por mais que o termo se repita. A categoria
+considerada é a **escolhida pelo cidadão**, não a sugerida. Níveis: 0–1 Baixa,
+2–3 Média, 4 ou mais Alta. Na fila ordenada vêm primeiro os pendentes, depois a
+maior pontuação e, no empate, quem chegou antes.
+
+### Limitações
+
+- O dataset é pequeno e foi escrito por uma única pessoa: a acurácia medida é
+  otimista em relação a textos reais de cidadãos.
+- O modelo não entende sinônimos nem contexto; palavras fora do vocabulário
+  de treino são ignoradas.
+- "Sugestão de melhoria" é a categoria mais difícil, porque uma sugestão pode
+  tratar de qualquer assunto das outras quatro.
+- A confiança não é calibrada.
+- A prioridade depende de uma lista fixa de expressões: negação ("não é
+  urgente"), ironia e erros de digitação escapam.
+- A prioridade não considera o tempo de espera na fila.
+- Os protocolos reais ainda não realimentam o treino; isso exigiria que o
+  atendente validasse a categoria antes.
 
 ## Dados abertos de governo
 

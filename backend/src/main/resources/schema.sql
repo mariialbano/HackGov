@@ -41,6 +41,19 @@ CREATE TABLE IF NOT EXISTS protocolo (
 
 CREATE INDEX IF NOT EXISTS ix_protocolo_solicitante ON protocolo (cpf_solicitante);
 
+-- Triagem inteligente. As colunas entram por ALTER para que um banco ja
+-- existente em disco seja atualizado sem perder os protocolos gravados.
+--
+-- prioridade e seus motivos saem de regras deterministicas; tipo_sugerido e
+-- confianca_sugestao guardam o que o classificador Naive Bayes sugeriu na
+-- abertura, o que permite medir quantas vezes o cidadao aceitou a sugestao.
+-- A confianca e relativa entre as categorias, nao uma probabilidade de acerto.
+ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS prioridade         VARCHAR(10);
+ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS prioridade_pontos  INT;
+ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS prioridade_motivos VARCHAR(500);
+ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS tipo_sugerido      VARCHAR(120);
+ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS confianca_sugestao DECIMAL(5,4);
+
 -- Metas financeiras pessoais. Valores em DECIMAL, nunca em ponto
 -- flutuante: dinheiro precisa de aritmetica exata.
 CREATE TABLE IF NOT EXISTS meta (

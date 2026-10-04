@@ -3,10 +3,12 @@
 
 import { api } from './apiClient';
 
-export function listarProtocolos({ status, tipo, pagina, limite } = {}) {
+// `ordem: 'prioridade'` devolve a fila de atendimento (só para o atendente).
+export function listarProtocolos({ status, tipo, ordem, pagina, limite } = {}) {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (tipo) params.set('tipo', tipo);
+  if (ordem) params.set('ordem', ordem);
   if (pagina) params.set('pagina', pagina);
   if (limite) params.set('limite', limite);
 
@@ -16,6 +18,12 @@ export function listarProtocolos({ status, tipo, pagina, limite } = {}) {
 
 export function obterProtocolo(id) {
   return api.get(`/protocolos/${id}`);
+}
+
+// Triagem inteligente: categoria sugerida pela IA para a descrição digitada.
+// Devolve { sugestao: { tipo, confianca, nivel, termos } | null, motivo, ... }.
+export function sugerirTipo(descricao) {
+  return api.post('/protocolos/sugestao', { descricao });
 }
 
 export function criarProtocolo({ tipo, descricao }) {

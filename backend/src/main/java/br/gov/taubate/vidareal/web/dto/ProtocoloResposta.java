@@ -2,6 +2,7 @@ package br.gov.taubate.vidareal.web.dto;
 
 import br.gov.taubate.vidareal.modelo.Protocolo;
 import java.time.Instant;
+import java.util.List;
 
 /** Representacao publica de um protocolo. */
 public record ProtocoloResposta(
@@ -14,9 +15,32 @@ public record ProtocoloResposta(
         String corPrazo,
         Instant abertoEm,
         Instant concluidoEm,
-        String cpfSolicitante) {
+        String cpfSolicitante,
+        Triagem triagem) {
 
-    public static ProtocoloResposta de(Protocolo protocolo) {
+    /**
+     * Triagem do protocolo: informacao interna do atendimento.
+     *
+     * @param confiancaSugestao confianca relativa do classificador entre as
+     *                          categorias; nao e probabilidade de acerto
+     * @param sugestaoAceita    se o cidadao ficou com a categoria sugerida;
+     *                          nulo quando nao houve sugestao
+     */
+    public record Triagem(
+            String prioridade,
+            Integer pontos,
+            List<String> motivos,
+            String tipoSugerido,
+            Double confiancaSugestao,
+            Boolean sugestaoAceita) {
+    }
+
+    /**
+     * @param incluirTriagem true apenas para o atendente: o cidadao nao
+     *                       recebe a prioridade nem os motivos do proprio
+     *                       pedido, entao o campo vai nulo
+     */
+    public static ProtocoloResposta de(Protocolo protocolo, boolean incluirTriagem) {
         return new ProtocoloResposta(
                 protocolo.getId(),
                 protocolo.getTipo(),
@@ -27,6 +51,19 @@ public record ProtocoloResposta(
                 protocolo.getEtapa().getCorPrazo(),
                 protocolo.getAbertoEm(),
                 protocolo.getConcluidoEm(),
-                protocolo.getCpfSolicitante());
+                protocolo.getCpfSolicitante(),
+                incluirTriagem ? triagemDe(protocolo) : null);
+    }
+
+    private static Triagem triagemDe(Protocolo protocolo) {
+        String motivos = protocolo.getPrioridadeMotivos();
+        String sugerido = protocolo.getTipoSugerido();
+        return new Triagem(
+                protocolo.getPrioridade(),
+                protocolo.getPrioridadePontos(),
+                motivos == null || motivos.isBlank() ? List.of() : List.of(motivos.split(" \\| ")),
+                sugerido,
+                protocolo.getConfiancaSugestao(),
+                sugerido == null ? null : sugerido.equals(protocolo.getTipo()));
     }
 }
