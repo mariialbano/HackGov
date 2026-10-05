@@ -115,6 +115,7 @@ export default function Indicadores() {
             aoTrocarMunicipio={trocarMunicipio}
             idBase="indicadores"
             classeSelect={`${controlClass} ${fieldBorder(false)} font-medium`}
+            larguraMunicipio="sm:w-[18rem]"
           />
         </PageHeader>
 

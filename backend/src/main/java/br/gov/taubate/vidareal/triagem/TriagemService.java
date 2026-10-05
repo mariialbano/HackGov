@@ -103,7 +103,7 @@ public class TriagemService {
                 Math.round(acuraciaLeaveOneOut * 100));
 
         for (Protocolo protocolo : repositorio.listarProtocolos()) {
-            if (protocolo.getPrioridade() == null) {
+            if (protocolo.getPrioridadePontos() == null) {
                 triar(protocolo);
                 repositorio.salvarProtocolo(protocolo);
             }
@@ -170,8 +170,8 @@ public class TriagemService {
                 protocolo.getTipo(), protocolo.getDescricao());
         Sugestao sugestao = sugerir(protocolo.getDescricao()).sugestao();
 
+        // So os pontos sao gravados; o nivel e derivado deles na leitura.
         protocolo.registrarTriagem(
-                prioridade.nivel(),
                 prioridade.pontos(),
                 String.join(" | ", prioridade.motivos()),
                 sugestao == null ? null : sugestao.tipo(),

@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <pre>
  *   GET   /perfil        dados da conta
- *   PUT   /perfil        atualiza nome e e-mail
+ *   PUT   /perfil        atualiza nome, e-mail (com a senha atual) e endereco
  *   PATCH /perfil/senha  troca a senha
  * </pre>
  *
@@ -55,7 +55,11 @@ public class PerfilController {
         this.encoder = encoder;
     }
 
-    public record PerfilRequest(String nome, String email, String cep, String cidade) {
+    /**
+     * @param senhaAtual exigida apenas quando o e-mail muda
+     */
+    public record PerfilRequest(String nome, String email, String cep, String cidade,
+                                String senhaAtual) {
     }
 
     public record SenhaRequest(String senhaAtual, String senhaNova) {
@@ -70,21 +74,38 @@ public class PerfilController {
     public Map<String, Object> atualizar(@UsuarioLogado Usuario usuario,
                                          @RequestBody PerfilRequest corpo) {
         String nome = Validadores.sanitizar(corpo.nome(), 120);
-        String email = Validadores.sanitizar(corpo.email(), 200);
+        String email = Validadores.normalizarEmail(corpo.email());
+        boolean emailMudou = !email.equalsIgnoreCase(usuario.getEmail() == null ? "" : usuario.getEmail());
 
         List<ErroCampo> erros = new ArrayList<>();
         if (nome.length() < 3) {
             erros.add(new ErroCampo("nome", "Deve ter no mínimo 3 caracteres."));
         }
-        if (!email.isEmpty() && !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$")) {
+        if (email.isEmpty()) {
+            erros.add(new ErroCampo("email", "Obrigatório. É por ele que você recupera a senha."));
+        } else if (!Validadores.emailValido(email)) {
             erros.add(new ErroCampo("email", "Informe um e-mail válido."));
+        } else if (emailMudou && repositorio.emailEmUso(email, usuario.getCpf())) {
+            erros.add(new ErroCampo("email", "Este e-mail já está em uso por outra conta."));
         }
+
+        // O e-mail e o canal de recuperacao de senha. Se pudesse ser trocado
+        // sem a senha, quem achasse uma sessao aberta trocaria o e-mail e, em
+        // seguida, redefiniria a senha: a mesma tomada de conta que a troca
+        // de senha ja impede ao pedir a senha atual.
+        if (emailMudou && erros.isEmpty()
+                && (corpo.senhaAtual() == null
+                        || !encoder.matches(corpo.senhaAtual(), usuario.getSenhaHash()))) {
+            erros.add(new ErroCampo("senhaAtual",
+                    "Para alterar o e-mail, confirme com a sua senha atual."));
+        }
+
         if (!erros.isEmpty()) {
             throw ApiException.requisicaoInvalida("Dados inválidos na requisição.", erros);
         }
 
         usuario.setNome(nome);
-        usuario.setEmail(email.isEmpty() ? null : email);
+        usuario.setEmail(email);
 
         // CEP em branco significa "apagar o endereco", nao "manter o antigo".
         String cep = Validadores.apenasDigitos(corpo.cep());
@@ -94,7 +115,8 @@ public class PerfilController {
         repositorio.salvarUsuario(usuario);
 
         repositorio.registrarAuditoria("ATUALIZAR_PERFIL", "perfil", usuario.getCpf(),
-                usuario.getCpf(), usuario.getPerfil().getValor(), null);
+                usuario.getCpf(), usuario.getPerfil().getValor(),
+                emailMudou ? "e-mail alterado" : null);
 
         return montarResposta(usuario);
     }

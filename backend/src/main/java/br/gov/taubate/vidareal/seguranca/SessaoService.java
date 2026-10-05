@@ -50,4 +50,13 @@ public class SessaoService {
             sessoes.remove(token);
         }
     }
+
+    /**
+     * Encerra todas as sessoes de um usuario. Usado quando a senha e
+     * redefinida por recuperacao: quem pediu nao esta logado, e qualquer
+     * sessao aberta com a senha antiga deixa de valer.
+     */
+    public void encerrarTodasDe(String cpf) {
+        sessoes.values().removeIf(sessao -> sessao.usuario().getCpf().equals(cpf));
+    }
 }

@@ -41,6 +41,12 @@
       <artifactId>spring-security-crypto</artifactId>
     </dependency>
 
+    <!-- Envio de e-mail por SMTP (JavaMailSender): recuperacao de senha -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+
     <!-- Acesso a dados em SQL puro (JdbcTemplate), sem ORM: o esquema fica
          visivel em schema.sql e as entidades seguem objetos Java simples -->
     <dependency>

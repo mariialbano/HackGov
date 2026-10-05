@@ -15,7 +15,7 @@ const INTEGRANTES = [
 
 // Login e cadastro têm composição própria, de tela cheia: um rodapé ali
 // competiria com o painel institucional.
-const SEM_RODAPE = ['/', '/cadastro'];
+const SEM_RODAPE = ['/', '/cadastro', '/recuperar-senha', '/redefinir-senha'];
 
 export default function Rodape() {
   const { pathname } = useLocation();

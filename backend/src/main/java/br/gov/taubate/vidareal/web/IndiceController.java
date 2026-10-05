@@ -39,6 +39,7 @@ public class IndiceController {
         Map<String, String> recursos = new LinkedHashMap<>();
         recursos.put("auth",
                 "POST /api/v1/auth/login · POST /api/v1/auth/cadastro · "
+                        + "POST /api/v1/auth/recuperacao · POST /api/v1/auth/recuperacao/confirmar · "
                         + "GET /api/v1/auth/me · POST /api/v1/auth/logout");
         recursos.put("perfil",
                 "GET|PUT /api/v1/perfil · PATCH /api/v1/perfil/senha");

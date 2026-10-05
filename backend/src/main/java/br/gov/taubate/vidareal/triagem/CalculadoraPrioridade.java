@@ -17,10 +17,14 @@ import java.util.regex.Pattern;
  *   <caption>Fatores</caption>
  *   <tr><td>Categoria "Problema técnico"</td><td>+2</td></tr>
  *   <tr><td>Categoria de orientacao financeira ou analise de metas</td><td>+1</td></tr>
- *   <tr><td>Relato de impedimento de uso</td><td>+2</td></tr>
- *   <tr><td>Indicio de vulnerabilidade financeira</td><td>+2</td></tr>
- *   <tr><td>Urgencia declarada</td><td>+1</td></tr>
+ *   <tr><td>Relato de impedimento de uso ("não consigo", "erro ao")</td><td>+2</td></tr>
+ *   <tr><td>Indicio de vulnerabilidade financeira ("dívida", "negativado")</td><td>+2</td></tr>
+ *   <tr><td>Urgencia declarada ("urgente", "para hoje", "até amanhã")</td><td>+1</td></tr>
  * </table>
+ *
+ * <p>As expressoes sao contextualizadas de proposito: "erro", "hoje" e
+ * "amanhã" soltos aparecem em textos que nao relatam impedimento nem pedem
+ * urgencia, e contariam como falso positivo.</p>
  *
  * <p>Niveis: 0-1 Baixa, 2-3 Média, 4 ou mais Alta.</p>
  */
@@ -65,10 +69,13 @@ public final class CalculadoraPrioridade {
 
     private static final List<Fator> FATORES = List.of(
             Fator.de("Relato de impedimento de uso", 2,
-                    "não consigo", "não carrega", "não abre", "não funciona", "não entra",
-                    "não aparece", "não salva", "travou", "travando", "trava", "erro",
-                    "fora do ar", "bloqueado", "bloqueada", "perdi o acesso", "perdi acesso",
-                    "tela branca"),
+                    // "erro" sozinho fica de fora: "melhorar a mensagem de erro"
+                    // e uma sugestao, nao alguem impedido de usar o servico.
+                    "não consigo", "não consegui", "não carrega", "não abre", "não funciona",
+                    "não entra", "não aparece", "não salva", "travou", "travando", "trava",
+                    "erro ao", "aparece erro", "dá erro", "deu erro", "dando erro",
+                    "retornou erro", "erro inesperado", "fora do ar", "bloqueado", "bloqueada",
+                    "perdi o acesso", "perdi acesso", "tela branca"),
             Fator.de("Indício de vulnerabilidade financeira", 2,
                     "dívida", "dívidas", "endividado", "endividada", "superendividamento",
                     "negativado", "negativada", "nome sujo", "desempregado", "desempregada",
@@ -76,9 +83,12 @@ public final class CalculadoraPrioridade {
                     "atrasado", "atrasada", "atrasados", "atrasadas", "sem renda"),
             // "emergência" fica de fora: "reserva de emergência" e o nome de
             // uma meta comum, nao um pedido urgente.
+            // "hoje" e "amanhã" so contam com contexto de prazo: "o site esta
+            // lento hoje" descreve o momento, nao pede urgencia.
             Fator.de("Urgência declarada", 1,
-                    "urgente", "urgência", "hoje", "amanhã", "o quanto antes",
-                    "imediato", "imediatamente", "prazo vence"));
+                    "urgente", "urgência", "para hoje", "pra hoje", "ainda hoje", "até hoje",
+                    "vence hoje", "para amanhã", "pra amanhã", "até amanhã", "vence amanhã",
+                    "o quanto antes", "imediato", "imediatamente", "prazo vence"));
 
     /**
      * @param tipo      categoria escolhida pelo cidadao (nao a sugerida)
@@ -111,7 +121,14 @@ public final class CalculadoraPrioridade {
             motivos.add("Nenhum fator de prioridade identificado");
         }
 
-        String nivel = pontos >= MINIMO_ALTA ? ALTA : pontos >= MINIMO_MEDIA ? MEDIA : BAIXA;
-        return new Prioridade(nivel, pontos, List.copyOf(motivos));
+        return new Prioridade(nivel(pontos), pontos, List.copyOf(motivos));
+    }
+
+    /**
+     * Nivel correspondente a uma pontuacao. O banco guarda apenas os pontos:
+     * o nivel e derivado aqui, sempre pela mesma regra.
+     */
+    public static String nivel(int pontos) {
+        return pontos >= MINIMO_ALTA ? ALTA : pontos >= MINIMO_MEDIA ? MEDIA : BAIXA;
     }
 }

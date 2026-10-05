@@ -45,6 +45,18 @@ export function cadastrar({ nome, cpf, email, senha, cep, cidade }) {
   return api.post('/auth/cadastro', { nome, cpf: cpfLimpo, email, senha, cep, cidade }, { auth: false });
 }
 
+// "Esqueci minha senha", passo 1. A resposta é a mesma para qualquer CPF
+// válido: o servidor não revela se existe conta.
+export function solicitarRecuperacao(cpf) {
+  const cpfLimpo = sanitizeText(String(cpf), 14).replace(/\D/g, '');
+  return api.post('/auth/recuperacao', { cpf: cpfLimpo }, { auth: false });
+}
+
+// Passo 2: troca a senha usando o token recebido na mensagem.
+export function redefinirSenha({ token, senhaNova, confirmacao }) {
+  return api.post('/auth/recuperacao/confirmar', { token, senhaNova, confirmacao }, { auth: false });
+}
+
 // Encerra a sessão no servidor, invalidando o token.
 export function logout() {
   return api.post('/auth/logout');

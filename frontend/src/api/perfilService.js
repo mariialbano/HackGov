@@ -8,8 +8,10 @@ export function obterPerfil() {
   return api.get('/perfil');
 }
 
-export function atualizarPerfil({ nome, email, cep, cidade }) {
-  return api.put('/perfil', { nome, email, cep, cidade });
+// `senhaAtual` só é exigida pelo servidor quando o e-mail muda: ele é o
+// canal de recuperação de senha, e trocá-lo equivale a trocar a credencial.
+export function atualizarPerfil({ nome, email, cep, cidade, senhaAtual }) {
+  return api.put('/perfil', { nome, email, cep, cidade, senhaAtual });
 }
 
 // Trocar a senha encerra a sessão no servidor: o usuário precisa entrar

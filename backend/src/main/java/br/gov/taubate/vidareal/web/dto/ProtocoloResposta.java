@@ -1,6 +1,7 @@
 package br.gov.taubate.vidareal.web.dto;
 
 import br.gov.taubate.vidareal.modelo.Protocolo;
+import br.gov.taubate.vidareal.triagem.CalculadoraPrioridade;
 import java.time.Instant;
 import java.util.List;
 
@@ -58,9 +59,11 @@ public record ProtocoloResposta(
     private static Triagem triagemDe(Protocolo protocolo) {
         String motivos = protocolo.getPrioridadeMotivos();
         String sugerido = protocolo.getTipoSugerido();
+        Integer pontos = protocolo.getPrioridadePontos();
         return new Triagem(
-                protocolo.getPrioridade(),
-                protocolo.getPrioridadePontos(),
+                // O nivel nao esta no banco: deriva dos pontos, sempre pela mesma regra.
+                pontos == null ? null : CalculadoraPrioridade.nivel(pontos),
+                pontos,
                 motivos == null || motivos.isBlank() ? List.of() : List.of(motivos.split(" \\| ")),
                 sugerido,
                 protocolo.getConfiancaSugestao(),

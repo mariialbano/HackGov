@@ -24,6 +24,20 @@ public final class Validadores {
         return limpo.length() > tamanhoMaximo ? limpo.substring(0, tamanhoMaximo) : limpo;
     }
 
+    /** Formato basico de e-mail: algo@dominio.tld, sem espacos. */
+    public static boolean emailValido(String email) {
+        return email != null && email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$");
+    }
+
+    /**
+     * E-mail em minusculas e sem espacos nas pontas: "Maria@Exemplo.com" e
+     * "maria@exemplo.com" sao a mesma caixa de entrada e precisam contar
+     * como o mesmo endereco na checagem de duplicidade.
+     */
+    public static String normalizarEmail(String email) {
+        return sanitizar(email, 200).toLowerCase(java.util.Locale.ROOT);
+    }
+
     public static String apenasDigitos(String valor) {
         return valor == null ? "" : valor.replaceAll("\\D", "");
     }

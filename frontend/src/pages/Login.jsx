@@ -183,6 +183,12 @@ export default function Login() {
               <ChecklistSenha senha={senha} />
             </FormField>
 
+            <p className="-mt-1 text-right text-sm">
+              <Link to="/recuperar-senha" className="font-semibold text-brand-ink hover:underline">
+                Esqueci minha senha
+              </Link>
+            </p>
+
             <StatusMessage type={status?.type} message={status?.message} />
 
             <Button type="submit" size="lg" fullWidth loading={carregando}>

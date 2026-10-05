@@ -8,6 +8,7 @@ import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
 import br.gov.taubate.vidareal.seguranca.AutenticacaoInterceptor;
 import br.gov.taubate.vidareal.seguranca.LimitadorRequisicoes;
+import br.gov.taubate.vidareal.seguranca.RecuperacaoSenhaService;
 import br.gov.taubate.vidareal.seguranca.SessaoService;
 import br.gov.taubate.vidareal.seguranca.UsuarioLogado;
 import br.gov.taubate.vidareal.util.PoliticaSenha;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +40,10 @@ import org.springframework.web.bind.annotation.RestController;
  * Recurso /api/v1/auth.
  *
  * <pre>
- *   POST /login   autentica e devolve o token de sessao
+ *   POST /login                  autentica e devolve o token de sessao
+ *   POST /cadastro               cria a conta de um cidadao
+ *   POST /recuperacao            inicia o "esqueci minha senha"
+ *   POST /recuperacao/confirmar  redefine a senha com o token recebido
  *   GET  /me      dados do usuario autenticado
  *   POST /logout  invalida o token
  * </pre>
@@ -58,14 +63,27 @@ public class AuthController {
      */
     private final LimitadorRequisicoes limitador;
 
+    private final RecuperacaoSenhaService recuperacao;
+
+    /**
+     * Limite proprio para a recuperacao de senha, contado a parte do login:
+     * quem errou a senha algumas vezes ainda precisa conseguir recupera-la.
+     */
+    private final LimitadorRequisicoes limitadorRecuperacao;
+
     public AuthController(Repositorio repositorio, SessaoService sessoes,
                           BCryptPasswordEncoder encoder,
+                          RecuperacaoSenhaService recuperacao,
                           @Value("${vidareal.seguranca.login.limite:5}") int limite,
-                          @Value("${vidareal.seguranca.login.janela-minutos:15}") int janelaMinutos) {
+                          @Value("${vidareal.seguranca.login.janela-minutos:15}") int janelaMinutos,
+                          @Value("${vidareal.seguranca.recuperacao.limite:10}") int limiteRecuperacao) {
         this.repositorio = repositorio;
         this.sessoes = sessoes;
         this.encoder = encoder;
+        this.recuperacao = recuperacao;
         this.limitador = new LimitadorRequisicoes(limite, Duration.ofMinutes(janelaMinutos));
+        this.limitadorRecuperacao =
+                new LimitadorRequisicoes(limiteRecuperacao, Duration.ofMinutes(janelaMinutos));
     }
 
     @PostMapping("/login")
@@ -127,7 +145,7 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> cadastrar(@RequestBody CadastroRequest corpo) {
         String nome = Validadores.sanitizar(corpo.nome(), 120);
         String cpf = Validadores.apenasDigitos(corpo.cpf());
-        String email = Validadores.sanitizar(corpo.email(), 200);
+        String email = Validadores.normalizarEmail(corpo.email());
 
         List<ErroCampo> erros = new ArrayList<>();
 
@@ -137,7 +155,10 @@ public class AuthController {
         if (!Validadores.cpfValido(cpf)) {
             erros.add(new ErroCampo("cpf", "CPF inválido. Confira os dígitos informados."));
         }
-        if (!email.isEmpty() && !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$")) {
+        // Obrigatorio: e para o e-mail que vai o link de recuperacao de senha.
+        if (email.isEmpty()) {
+            erros.add(new ErroCampo("email", "Obrigatório. É por ele que você recupera a senha."));
+        } else if (!Validadores.emailValido(email)) {
             erros.add(new ErroCampo("email", "Informe um e-mail válido."));
         }
         erros.addAll(PoliticaSenha.avaliar(corpo.senha(), "senha"));
@@ -149,9 +170,14 @@ public class AuthController {
         if (repositorio.cpfJaCadastrado(cpf)) {
             throw ApiException.conflito("Já existe uma conta com este CPF.");
         }
+        // Dois usuarios com o mesmo e-mail receberiam o link um do outro.
+        if (repositorio.emailEmUso(email, null)) {
+            throw new ApiException(HttpStatus.CONFLICT, "CONFLICT",
+                    "Já existe uma conta com este e-mail.",
+                    List.of(new ErroCampo("email", "Este e-mail já está em uso por outra conta.")));
+        }
 
-        Usuario novo = new Usuario(cpf, encoder.encode(corpo.senha()), nome,
-                email.isEmpty() ? null : email, Perfil.CIDADAO);
+        Usuario novo = new Usuario(cpf, encoder.encode(corpo.senha()), nome, email, Perfil.CIDADAO);
 
         // Endereco vem do ViaCEP e e opcional: quem nao preencher se cadastra igual.
         String cep = Validadores.apenasDigitos(corpo.cep());
@@ -174,6 +200,87 @@ public class AuthController {
         resposta.put("user", UsuarioResposta.de(novo));
 
         return ResponseEntity.created(URI.create("/api/v1/perfil")).body(resposta);
+    }
+
+    // ---------- recuperacao de senha ----------
+
+    /** Corpo do pedido de recuperacao. */
+    public record RecuperacaoRequest(String cpf) {
+    }
+
+    /** Corpo da redefinicao: o token recebido e a nova senha, digitada duas vezes. */
+    public record RedefinicaoRequest(String token, String senhaNova, String confirmacao) {
+    }
+
+    /**
+     * Passo 1 de "esqueci minha senha".
+     *
+     * <p>A resposta e identica para CPF cadastrado e nao cadastrado: revelar
+     * a diferenca transformaria esta rota em um consultor de CPFs.</p>
+     */
+    @PostMapping("/recuperacao")
+    public ResponseEntity<Map<String, String>> solicitarRecuperacao(
+            @RequestBody RecuperacaoRequest corpo,
+            HttpServletRequest requisicao,
+            HttpServletResponse resposta) {
+        limitarRecuperacao(requisicao, resposta);
+
+        // Conferido antes de olhar o CPF: a resposta e a mesma para qualquer
+        // pessoa e nao diz nada sobre contas.
+        if (!recuperacao.estaDisponivel()) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "EMAIL_INDISPONIVEL",
+                    "A recuperação de senha está indisponível: o envio de e-mail não está "
+                            + "configurado no servidor.");
+        }
+
+        String cpf = Validadores.apenasDigitos(corpo.cpf());
+        // O formato do CPF nao e segredo: recusa-lo nao revela nada sobre contas.
+        if (!Validadores.cpfValido(cpf)) {
+            throw ApiException.requisicaoInvalida("Dados inválidos na requisição.",
+                    List.of(new ErroCampo("cpf", "CPF inválido. Confira os dígitos informados.")));
+        }
+
+        recuperacao.solicitar(cpf);
+
+        return ResponseEntity.accepted().body(Map.of("message",
+                "Se houver uma conta com este CPF, enviamos um e-mail com o link para redefinir "
+                        + "a senha. O link vale por " + recuperacao.getValidade().toMinutes() + " minutos."));
+    }
+
+    /** Passo 2: troca a senha de quem apresentar um token valido. */
+    @PostMapping("/recuperacao/confirmar")
+    public ResponseEntity<Void> redefinirSenha(@RequestBody RedefinicaoRequest corpo,
+                                               HttpServletRequest requisicao,
+                                               HttpServletResponse resposta) {
+        limitarRecuperacao(requisicao, resposta);
+
+        // A senha e validada ANTES de o token ser consumido: uma senha fraca
+        // nao pode custar ao cidadao o link que ele acabou de receber.
+        List<ErroCampo> erros = new ArrayList<>(PoliticaSenha.avaliar(corpo.senhaNova(), "senhaNova"));
+        if (corpo.senhaNova() != null && !corpo.senhaNova().equals(corpo.confirmacao())) {
+            erros.add(new ErroCampo("confirmacao", "A confirmação não confere com a nova senha."));
+        }
+        if (!erros.isEmpty()) {
+            throw ApiException.requisicaoInvalida("A nova senha não atende à política.", erros);
+        }
+
+        // Inexistente, usado e vencido recebem a mesma resposta.
+        if (!recuperacao.redefinir(corpo.token(), corpo.senhaNova())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "TOKEN_INVALIDO",
+                    "Link inválido ou expirado. Solicite uma nova recuperação de senha.");
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    private void limitarRecuperacao(HttpServletRequest requisicao, HttpServletResponse resposta) {
+        String ip = requisicao.getRemoteAddr();
+        if (!limitadorRecuperacao.permitir(ip)) {
+            resposta.setHeader("Retry-After",
+                    String.valueOf(limitadorRecuperacao.segundosParaLiberar(ip)));
+            throw ApiException.muitasRequisicoes(
+                    "Muitas tentativas de recuperação. Aguarde alguns minutos e tente novamente.");
+        }
     }
 
     @GetMapping("/me")

@@ -78,6 +78,25 @@ class ApiIntegracaoTest {
     }
 
     @Test
+    @DisplayName("sem SMTP configurado, a recuperação de senha responde 503 e o login segue funcionando")
+    void recuperacaoIndisponivelSemSmtp() throws Exception {
+        // Esta suite nao configura servidor de e-mail. A resposta e a mesma
+        // para CPF com e sem conta: nao revela nada.
+        for (String cpf : new String[] {CPF_CIDADAO, "98765432100"}) {
+            mvc.perform(post("/api/v1/auth/recuperacao")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"cpf\":\"" + cpf + "\"}"))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.error.code", is("EMAIL_INDISPONIVEL")));
+        }
+
+        mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoLogin(CPF_CIDADAO, "Cidadao@123")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("rota protegida sem token devolve 401")
     void semTokenNaoAcessa() throws Exception {
         mvc.perform(get("/api/v1/protocolos"))

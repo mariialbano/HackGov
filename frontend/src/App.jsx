@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 // Importando as Páginas
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
+import RecuperarSenha from './pages/RecuperarSenha';
+import RedefinirSenha from './pages/RedefinirSenha';
 import Perfil from './pages/Perfil';
 import Dashboard from './pages/Dashboard';
 import Protocolos from './pages/Protocolos';
@@ -20,9 +22,9 @@ import Rodape from './components/Rodape';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 
-// Login e cadastro vêm antes da sessão: ali o chat e a avaliação
-// disputariam atenção com o formulário.
-const SEM_ATALHOS = ['/', '/cadastro'];
+// Login, cadastro e recuperação de senha vêm antes da sessão: ali o chat
+// e a avaliação disputariam atenção com o formulário.
+const SEM_ATALHOS = ['/', '/cadastro', '/recuperar-senha', '/redefinir-senha'];
 
 function AtalhosFlutuantes() {
   const { isAuthenticated } = useAuth();
@@ -63,6 +65,8 @@ function App() {
           {/* Rota inicial: Tela de Login */}
           <Route path="/" element={<Login />} />
           <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
 
           {/* Rotas internas: exigem usuário autenticado */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

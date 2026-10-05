@@ -90,4 +90,73 @@ class CalculadoraPrioridadeTest {
     void palavraInteira() {
         assertEquals(0, CalculadoraPrioridade.calcular(SUGESTAO, "Filme de terror é bom.").pontos());
     }
+
+    // ---------- falsos positivos: a palavra aparece, o fator não se aplica ----------
+
+    @Test
+    @DisplayName("\"hoje\" e \"amanhã\" descrevendo o momento não contam como urgência")
+    void hojeSemPrazoNaoEUrgencia() {
+        for (String descricao : new String[] {
+                "A plataforma está muito lenta hoje.",
+                "Hoje vi que o gráfico mudou de cor.",
+                "Amanhã vou testar de novo no computador do trabalho.",
+                "O valor de hoje é diferente do de ontem."}) {
+            assertEquals(0, CalculadoraPrioridade.calcular(SUGESTAO, descricao).pontos(), descricao);
+        }
+    }
+
+    @Test
+    @DisplayName("\"erro\" citado como assunto não conta como impedimento de uso")
+    void erroComoAssuntoNaoEImpedimento() {
+        for (String descricao : new String[] {
+                "Sugiro melhorar o texto da mensagem de erro.",
+                "Seria bom explicar o que cada código de erro significa.",
+                "Encontrei um erro de português no rodapé."}) {
+            assertEquals(0, CalculadoraPrioridade.calcular(SUGESTAO, descricao).pontos(), descricao);
+        }
+    }
+
+    // ---------- positivos: as expressões contextualizadas continuam valendo ----------
+
+    @Test
+    @DisplayName("prazo declarado conta como urgência")
+    void prazoDeclaradoEUrgencia() {
+        for (String descricao : new String[] {
+                "Preciso da resposta para hoje.",
+                "Tenho que resolver isso até amanhã.",
+                "O boleto vence amanhã.",
+                "Pra hoje, se possível.",
+                "Preciso disso o quanto antes.",
+                "É urgente."}) {
+            Prioridade prioridade = CalculadoraPrioridade.calcular(SUGESTAO, descricao);
+            assertEquals(1, prioridade.pontos(), descricao);
+            assertTrue(prioridade.motivos().get(0).startsWith("Urgência declarada"), descricao);
+        }
+    }
+
+    @Test
+    @DisplayName("erro que impede o uso conta como impedimento")
+    void erroQueImpedeOUso() {
+        for (String descricao : new String[] {
+                "Erro ao salvar a meta.",
+                "Aparece erro quando clico em enviar.",
+                "Dá erro toda vez que tento entrar.",
+                "O sistema retornou erro inesperado.",
+                "Não consegui concluir o cadastro."}) {
+            Prioridade prioridade = CalculadoraPrioridade.calcular(SUGESTAO, descricao);
+            assertEquals(2, prioridade.pontos(), descricao);
+            assertTrue(prioridade.motivos().get(0).startsWith("Relato de impedimento"), descricao);
+        }
+    }
+
+    @Test
+    @DisplayName("o nível é derivado só dos pontos: 0-1 Baixa, 2-3 Média, 4+ Alta")
+    void nivelDerivadoDosPontos() {
+        assertEquals(CalculadoraPrioridade.BAIXA, CalculadoraPrioridade.nivel(0));
+        assertEquals(CalculadoraPrioridade.BAIXA, CalculadoraPrioridade.nivel(1));
+        assertEquals(CalculadoraPrioridade.MEDIA, CalculadoraPrioridade.nivel(2));
+        assertEquals(CalculadoraPrioridade.MEDIA, CalculadoraPrioridade.nivel(3));
+        assertEquals(CalculadoraPrioridade.ALTA, CalculadoraPrioridade.nivel(4));
+        assertEquals(CalculadoraPrioridade.ALTA, CalculadoraPrioridade.nivel(7));
+    }
 }

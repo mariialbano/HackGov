@@ -38,7 +38,9 @@ export default function Cadastro() {
     if (!form.cpf.trim()) novos.cpf = 'Informe seu CPF.';
     else if (!validarCpf(form.cpf)) novos.cpf = 'CPF inválido. Confira os dígitos informados.';
 
-    if (form.email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(form.email.trim())) {
+    if (!form.email.trim()) {
+      novos.email = 'Informe seu e-mail.';
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(form.email.trim())) {
       novos.email = 'Informe um e-mail válido.';
     }
 
@@ -145,7 +147,8 @@ export default function Cadastro() {
 
           <FormField
             label="E-mail"
-            hint="Opcional. Usado apenas para avisos sobre seus protocolos."
+            hint="É para este endereço que enviamos o link se você esquecer a senha."
+            required
             error={erros.email}
             htmlFor="email"
           >

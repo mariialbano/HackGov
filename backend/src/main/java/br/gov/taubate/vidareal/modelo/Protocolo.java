@@ -14,7 +14,7 @@ public class Protocolo {
     private Instant concluidoEm;
 
     // Triagem: informacao interna do atendimento, calculada pelo servidor.
-    private String prioridade;
+    // O nivel (Baixa/Média/Alta) nao e guardado: deriva dos pontos.
     private Integer prioridadePontos;
     private String prioridadeMotivos;
     private String tipoSugerido;
@@ -67,10 +67,7 @@ public class Protocolo {
         return concluidoEm;
     }
 
-    public String getPrioridade() {
-        return prioridade;
-    }
-
+    /** Pontuacao de prioridade; nula enquanto o protocolo nao foi triado. */
     public Integer getPrioridadePontos() {
         return prioridadePontos;
     }
@@ -90,9 +87,8 @@ public class Protocolo {
     }
 
     /** Registra o resultado da triagem feita na abertura ou na edicao. */
-    public void registrarTriagem(String prioridade, Integer prioridadePontos, String prioridadeMotivos,
+    public void registrarTriagem(Integer prioridadePontos, String prioridadeMotivos,
                                  String tipoSugerido, Double confiancaSugestao) {
-        this.prioridade = prioridade;
         this.prioridadePontos = prioridadePontos;
         this.prioridadeMotivos = prioridadeMotivos;
         this.tipoSugerido = tipoSugerido;

@@ -22,6 +22,10 @@ export default function Perfil() {
   const { notification, showSuccess, clear } = useToast();
 
   const [dados, setDados] = useState({ nome: '', email: '', cep: '', cidade: '' });
+  // E-mail gravado no servidor: comparado com o do formulário para saber se
+  // a alteração precisa da senha atual.
+  const [emailSalvo, setEmailSalvo] = useState('');
+  const [senhaParaEmail, setSenhaParaEmail] = useState('');
   const [errosDados, setErrosDados] = useState({});
   const [statusDados, setStatusDados] = useState(null);
 
@@ -42,6 +46,7 @@ export default function Perfil() {
           cep: resposta.cep ?? '',
           cidade: resposta.cidade ?? '',
         });
+        setEmailSalvo(resposta.email ?? '');
       })
       .catch((error) => {
         if (ativo) setStatusDados({ type: 'error', message: error.message });
@@ -61,8 +66,12 @@ export default function Perfil() {
     if (dados.nome.trim().length < 3) {
       novos.nome = 'Informe seu nome completo (mínimo de 3 caracteres).';
     }
-    if (dados.email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(dados.email.trim())) {
+    if (!dados.email.trim()) {
+      novos.email = 'Informe seu e-mail.';
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(dados.email.trim())) {
       novos.email = 'Informe um e-mail válido.';
+    } else if (emailMudou && !senhaParaEmail) {
+      novos.senhaAtual = 'Informe sua senha atual para alterar o e-mail.';
     }
     setErrosDados(novos);
     if (Object.keys(novos).length > 0) return;
@@ -75,8 +84,12 @@ export default function Perfil() {
         email: dados.email.trim(),
         cep: dados.cep,
         cidade: dados.cidade,
+        senhaAtual: emailMudou ? senhaParaEmail : undefined,
       });
       atualizarUsuario(resposta.user); // reflete o novo nome na navbar
+      setDados((a) => ({ ...a, email: resposta.email ?? '' }));
+      setEmailSalvo(resposta.email ?? '');
+      setSenhaParaEmail('');
       setStatusDados(null);
       showSuccess('Dados atualizados com sucesso.');
     } catch (error) {
@@ -86,6 +99,9 @@ export default function Perfil() {
       setStatusDados({ type: 'error', message: error.message });
     }
   };
+
+  // O e-mail é o canal de recuperação de senha: alterá-lo pede a senha atual.
+  const emailMudou = dados.email.trim().toLowerCase() !== emailSalvo.toLowerCase();
 
   // PATCH /api/v1/perfil/senha
   const salvarSenha = async (e) => {
@@ -165,7 +181,8 @@ export default function Perfil() {
 
             <FormField
               label="E-mail"
-              hint="Opcional. Usado apenas para avisos sobre seus protocolos."
+              hint="É para este endereço que enviamos o link se você esquecer a senha."
+              required
               error={errosDados.email}
               htmlFor="perfil-email"
             >
@@ -183,6 +200,28 @@ export default function Perfil() {
                 className={`${controlClass} ${fieldBorder(errosDados.email)}`}
               />
             </FormField>
+
+            {/* Só aparece quando o e-mail foi alterado */}
+            {emailMudou && (
+              <FormField
+                label="Senha atual"
+                hint="Por segurança, alterar o e-mail exige a sua senha: é por ele que a senha é recuperada."
+                required
+                error={errosDados.senhaAtual}
+                htmlFor="perfil-senha-email"
+              >
+                <CampoSenha
+                  id="perfil-senha-email"
+                  valor={senhaParaEmail}
+                  aoMudar={(v) => {
+                    setSenhaParaEmail(v);
+                    if (errosDados.senhaAtual) setErrosDados((a) => ({ ...a, senhaAtual: undefined }));
+                  }}
+                  erro={errosDados.senhaAtual}
+                  placeholder="Sua senha de hoje"
+                />
+              </FormField>
+            )}
 
             <CampoCep
               id="perfil-cep"

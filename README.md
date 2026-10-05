@@ -7,7 +7,8 @@ Taubaté/SP.
 
 ## Funcionalidades
 
-- **Cadastro e login** com CPF e senha, perfis de acesso e sessão com expiração
+- **Cadastro e login** com CPF, e-mail e senha, perfis de acesso e sessão com expiração
+- **Recuperação de senha por e-mail** — "esqueci minha senha" com link temporário de uso único
 - **Perfil do usuário** — edição dos dados de cadastro e troca de senha
 - **Acompanhamento de Protocolos** — abertura e acompanhamento de solicitações com status e prazos
 - **Simulação de Inflação** — projeção do valor futuro de um bem (juros compostos), com gráfico e exportação em PDF
@@ -108,10 +109,80 @@ npm run dev
 
 Acesse o endereço exibido pelo Vite (geralmente `http://localhost:5173`).
 
-> **Chatbot (opcional):** para o assistente funcionar, crie um arquivo
-> `.env` dentro de `backend/` seguindo o modelo do `.env.example`, com sua
-> chave da API do Google Gemini. **Sem a chave, todo o resto do sistema
-> funciona normalmente** — apenas o chatbot responde com mensagem de erro.
+### O que funciona logo após clonar
+
+Clonar e rodar `.\start.ps1` já entrega o sistema inteiro, **exceto duas
+funcionalidades** que dependem de credenciais pessoais — e credencial não
+vai para o repositório:
+
+| Funcionalidade | Variáveis | Sem a configuração |
+|---|---|---|
+| Recuperação de senha por e-mail | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | "Esqueci minha senha" avisa que está indisponível |
+| Chatbot | `IA_API_KEY` (Google Gemini) | O chatbot responde com mensagem de erro |
+
+Para ativá-las, crie o arquivo `backend/.env` a partir do modelo
+`backend/.env.example`. Isso é feito **uma vez por máquina**: o `start.ps1`
+e o `rodar.ps1` carregam o arquivo sozinhos em toda execução. O `.env` está
+no `.gitignore`; cada pessoa do grupo precisa do seu.
+
+### Configurando o envio de e-mail (Gmail)
+
+O sistema precisa de uma conta de e-mail para ser o **remetente** das
+mensagens de recuperação de senha. Os cidadãos podem ter e-mail em qualquer
+provedor.
+
+1. Escolha a conta Google remetente. Para um grupo, o ideal é uma conta
+   criada só para o projeto, e não o e-mail pessoal de alguém: a senha de app
+   permite enviar e-mails em nome da conta.
+2. Em <https://myaccount.google.com/security>, ative a **verificação em duas
+   etapas**.
+3. Em <https://myaccount.google.com/apppasswords>, gere uma **senha de app**.
+   São 16 letras, mostradas uma única vez. A senha normal da conta não
+   funciona para SMTP.
+4. Crie `backend/.env`:
+
+   ```
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=conta_remetente@gmail.com
+   SMTP_PASSWORD=as16letrasdasenhadeapp
+   ```
+
+   Escreva a senha **sem os espaços** que o Google exibe e sem aspas.
+5. Reinicie: `.\stop.ps1` e depois `.\start.ps1`. O `.env` só é lido na
+   subida.
+
+Para testar: crie uma conta pelo **Cadastre-se** com um e-mail seu, saia,
+clique em **Esqueci minha senha** e informe o CPF. O e-mail chega em alguns
+segundos; na primeira vez, confira também o spam.
+
+Se algo não funcionar:
+
+| Sintoma | Causa |
+|---|---|
+| "A recuperação de senha está indisponível..." | Não existe `backend/.env`, ou a API não foi reiniciada depois de criá-lo. Na subida, o `start.ps1` informa quantas variáveis carregou. |
+| A página de senhas de app diz que o recurso não está disponível | A verificação em duas etapas está desligada, ou a conta é de escola/empresa e o administrador bloqueia. |
+| "Confira seu e-mail" aparece, mas nada chega | Olhe o spam. Depois, procure `[recuperacao] falha ao enviar o e-mail` em `.run/api.log`: senha de app errada ou com espaços é o motivo mais comum. |
+| Nada chega para uma conta específica | A conta não tem e-mail cadastrado (contas antigas) ou o endereço foi digitado errado no cadastro. |
+
+Outros servidores SMTP com usuário e senha funcionam do mesmo jeito,
+trocando host e porta. Contas pessoais do Outlook/Hotmail costumam recusar
+esse tipo de acesso como remetente, porque a Microsoft passou a exigir OAuth.
+
+### O que não vai para o repositório
+
+Estes itens estão no `.gitignore` e ficam só na máquina de quem roda:
+
+- **`backend/.env`** — as credenciais (senha de app, chave do Gemini).
+- **`backend/data/`** — o banco de dados. Quem clona o projeto não recebe os
+  dados de ninguém: na primeira execução a API cria um banco novo, apenas
+  com as duas contas de demonstração.
+- **`.run/`** — os logs de execução.
+
+Dentro do banco, as senhas existem apenas como hash BCrypt e os tokens de
+recuperação apenas como SHA-256. Os demais dados (nome, CPF, e-mail) ficam
+em texto, protegidos pelo fato de o arquivo não sair da máquina; cifrar o
+banco em disco seria o passo seguinte para um ambiente de produção.
 
 ### Usuários de demonstração
 
@@ -119,6 +190,11 @@ Acesse o endereço exibido pelo Vite (geralmente `http://localhost:5173`).
 |-----------|----------------|---------------|---------------------------------|
 | Cidadão   | 529.982.247-25 | Cidadao@123   | Funcionalidades gerais          |
 | Atendente | 153.509.460-56 | Atendente@123 | Geral + Comparativos (restrito) |
+
+Essas duas contas nascem com e-mails do domínio `example.com`, que é
+reservado e nunca entrega. Para demonstrar a recuperação de senha, crie uma
+conta pelo **Cadastre-se** com um e-mail seu, ou defina `DEMO_EMAIL_CIDADAO`
+no `backend/.env`.
 
 ## API RESTful
 
@@ -128,7 +204,7 @@ todos os endpoints disponíveis.
 
 | Recurso | Endpoints |
 |---|---|
-| **Autenticação** | `POST /auth/cadastro` · `POST /auth/login` · `GET /auth/me` · `POST /auth/logout` |
+| **Autenticação** | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/recuperacao` · `POST /auth/recuperacao/confirmar` · `GET /auth/me` · `POST /auth/logout` |
 | **Perfil** | `GET`/`PUT` `/perfil` · `PATCH /perfil/senha` |
 | **Protocolos** | `GET`/`POST` `/protocolos` · `GET`/`PUT`/`DELETE` `/protocolos/:id` · `PATCH /protocolos/:id/status` · `GET /protocolos/estatisticas` |
 | **Triagem (IA)** | `POST /protocolos/sugestao` · `GET /protocolos/triagem/modelo` (atendente) · `GET /protocolos?ordem=prioridade` (atendente) |
@@ -183,6 +259,43 @@ protocolos):
   pela mesma política de senha forte, e **a sessão é encerrada no servidor após
   a troca** — se a senha foi trocada por suspeita de vazamento, nenhum token
   antigo continua valendo.
+- **O e-mail é obrigatório e único.** É o canal de recuperação de senha, então
+  o cadastro exige um e-mail válido e recusa um endereço já usado por outra
+  conta (dois usuários com o mesmo e-mail receberiam o link um do outro). A
+  comparação ignora maiúsculas e minúsculas.
+- **Trocar o e-mail no perfil exige a senha atual.** Sem isso, quem achasse
+  uma sessão aberta trocaria o e-mail e, em seguida, redefiniria a senha — a
+  mesma tomada de conta que a troca de senha já impede.
+- **Esqueci minha senha**: na tela de login, o cidadão informa o CPF e recebe,
+  **no e-mail cadastrado**, um link para escolher uma nova senha
+  (`POST /api/v1/auth/recuperacao` e `POST /api/v1/auth/recuperacao/confirmar`).
+  - O link traz um **token aleatório de 256 bits**, gerado como o da sessão,
+    que **vale por 15 minutos e uma única vez**. Pedir um novo invalida o
+    anterior.
+  - O banco guarda só o **SHA-256 do token**, nunca o token: quem ler o
+    banco não consegue redefinir a senha de ninguém.
+  - A resposta é **idêntica para CPF cadastrado e não cadastrado**, e leva o
+    mesmo tempo mínimo nos dois casos — a rota não serve para descobrir quem
+    tem conta.
+  - Token inexistente, vencido e já usado recebem a **mesma mensagem**.
+  - A nova senha passa pela mesma política de senha forte e é gravada com o
+    mesmo BCrypt. Depois da troca, **todas as sessões abertas da conta são
+    encerradas**.
+  - Nem a senha nem o token aparecem em log ou na trilha de auditoria.
+  - O link chega **somente por e-mail**, enviado por SMTP com conexão
+    criptografada (STARTTLS). A API nunca o devolve — devolvê-lo deixaria
+    qualquer pessoa trocar a senha de qualquer CPF. A mensagem vai em texto
+    puro e em HTML, e nem o link nem o destinatário aparecem em log.
+  - O envio acontece **fora da requisição**, em uma fila própria. Falar com o
+    servidor de e-mail leva de um a três segundos; feito dentro da
+    requisição, esse tempo denunciaria quais CPFs têm conta.
+  - Sem SMTP configurado, a rota responde `503` antes de olhar o CPF.
+  - Limitações: o e-mail **não é verificado** no cadastro (não há link de
+    confirmação), então um endereço digitado errado deixa a conta sem
+    recuperação; contas criadas antes de o e-mail ser obrigatório não têm
+    para onde receber o link até informarem um no perfil; e uma falha do
+    servidor de e-mail só aparece no log, porque a resposta ao cidadão não
+    pode mudar.
 - CPF e perfil **não são editáveis**: identificam a conta e o papel do usuário.
 - Em produção, o login seria integrado ao **gov.br (OAuth 2.0)**, padrão
   oficial do governo federal; o formulário CPF/senha simula esse fluxo.
@@ -264,7 +377,8 @@ O cidadão não recebe a prioridade nem os motivos: a API só inclui o bloco
 **Sobre a confiança:** é uma medida **relativa entre as cinco categorias**
 (softmax das pontuações, amortecido pela raiz do número de termos). **Não é
 uma probabilidade calibrada de acerto.** Abaixo de 0,45, ou com menos de três
-palavras conhecidas, o sistema prefere não sugerir.
+palavras conhecidas, o sistema prefere não sugerir; a partir de 0,65 a tela
+rotula a confiança como "alta", e entre os dois limites, como "média".
 
 ### Dataset
 
@@ -284,9 +398,32 @@ Com o backend rodando, `GET /api/v1/protocolos/triagem/modelo` (atendente)
 devolve a ficha do modelo: algoritmo, versão do dataset, categorias, exemplos
 por categoria, tamanho do vocabulário, acurácia e a lista dos exemplos.
 
-Na validação *leave-one-out* sobre o próprio dataset (v1.0.0) a categoria mais
-pontuada é a correta em **86,7%** dos casos. Com o limite de 0,45, a sugestão é
-exibida em cerca de 79% dos casos e, quando exibida, está correta em cerca de 92%.
+### Validação
+
+O modelo foi avaliado por *leave-one-out* sobre o próprio dataset (v1.0.0):
+para cada um dos 180 exemplos, treina-se com os outros 179 e classifica-se o
+que ficou de fora. Contagens, vocabulário e priors são recalculados a cada
+rodada, então o exemplo avaliado nunca participa do treino que o avalia.
+
+| Medida | Resultado |
+|---|---|
+| Categoria mais pontuada é a correta | 156 de 180 = **86,7%** |
+| Sugestão exibida (confiança ≥ 0,45 e ao menos três palavras conhecidas) | 143 de 180 = 79,4% |
+| Sugestão exibida e correta | 132 de 143 = 92,3% |
+
+Esses números precisam ser lidos com três ressalvas:
+
+- **Não existe conjunto de teste separado.** Toda a medição usa o mesmo
+  dataset sintético de 180 exemplos; nenhum texto real de cidadão foi usado.
+- **O dataset foi ampliado depois de ver os erros.** A primeira versão tinha
+  120 exemplos e acertava 74%; os 60 exemplos acrescentados foram escritos
+  conhecendo as falhas da primeira medição.
+- **Os limites 0,45 e 0,65 foram calibrados neste mesmo dataset.** Os 92,3%
+  são, por isso, uma medida otimista: descrevem o ajuste aos dados usados
+  para escolher os limites, não o desempenho esperado em produção.
+
+Uma avaliação honesta do desempenho real exigiria protocolos de cidadãos,
+rotulados por atendentes e guardados à parte do treino.
 
 ### Regras de prioridade
 
@@ -294,14 +431,24 @@ exibida em cerca de 79% dos casos e, quando exibida, está correta em cerca de 9
 |---|---|---|
 | Categoria "Problema técnico" | — | +2 |
 | Categoria de orientação financeira ou análise de metas | — | +1 |
-| Relato de impedimento de uso | "não consigo", "não carrega", "travou", "erro" | +2 |
+| Relato de impedimento de uso | "não consigo", "não carrega", "travou", "erro ao", "aparece erro" | +2 |
 | Indício de vulnerabilidade financeira | "dívida", "negativado", "desempregado", "despejo" | +2 |
-| Urgência declarada | "urgente", "hoje", "amanhã", "prazo vence" | +1 |
+| Urgência declarada | "urgente", "para hoje", "até amanhã", "prazo vence" | +1 |
 
 Cada fator conta uma única vez, por mais que o termo se repita. A categoria
 considerada é a **escolhida pelo cidadão**, não a sugerida. Níveis: 0–1 Baixa,
 2–3 Média, 4 ou mais Alta. Na fila ordenada vêm primeiro os pendentes, depois a
 maior pontuação e, no empate, quem chegou antes.
+
+As expressões são contextualizadas de propósito. "erro", "hoje" e "amanhã"
+soltos não contam: "sugiro melhorar a mensagem de erro" não relata
+impedimento, e "o site está lento hoje" não pede urgência.
+
+No banco ficam apenas os pontos (`prioridade_pontos`) e os motivos. O nível
+não é coluna: depende só dos pontos, e guardá-lo criaria uma dependência
+transitiva, contrariando a 3FN. `prioridade_motivos` é uma desnormalização
+deliberada — uma lista em um único texto —, mantida para leitura do atendente
+e auditoria; os motivos nunca são consultados individualmente.
 
 ### Limitações
 
@@ -317,6 +464,26 @@ maior pontuação e, no empate, quem chegou antes.
 - A prioridade não considera o tempo de espera na fila.
 - Os protocolos reais ainda não realimentam o treino; isso exigiria que o
   atendente validasse a categoria antes.
+
+### Limitações éticas
+
+- **As regras de prioridade podem ser manipuladas.** Elas são públicas (estão
+  neste arquivo e no código), então quem as conhece pode escrever "urgente",
+  "não consigo" e "dívida" só para subir na fila. Contar cada fator uma única
+  vez limita o ganho, mas não impede. Por isso a prioridade é um auxílio à
+  ordenação: a decisão de quem atender primeiro continua sendo do atendente.
+- **O sistema infere vulnerabilidade financeira automaticamente.** Quando a
+  descrição cita dívida, desemprego ou negativação, o protocolo — que é
+  ligado ao CPF — passa a carregar o motivo "indício de vulnerabilidade
+  financeira". É uma inferência feita por regra, sem confirmação humana, e
+  pode estar errada. Ela é visível só ao atendente: o cidadão não vê a
+  inferência nem tem como contestá-la. Em um sistema real, a LGPD (art. 20)
+  dá ao titular o direito de pedir revisão de decisões automatizadas que
+  afetem seus interesses; isso exigiria informar o cidadão de que a triagem
+  existe e oferecer um canal de revisão, o que este protótipo não faz.
+- **Um erro da triagem prejudica justamente quem ela pretende ajudar.** Quem
+  descreve uma situação grave com palavras fora da lista fica com prioridade
+  baixa. A fila por ordem de chegada continua disponível e é o padrão da tela.
 
 ## Dados abertos de governo
 
@@ -400,5 +567,5 @@ livremente**, e um botão "usar minha cidade" traz de volta a do cadastro.
 ## Tecnologias
 
 - **Frontend:** React 19, Vite, Tailwind CSS 4, React Router 7, Leaflet, Recharts, jsPDF, Lucide
-- **Backend:** Java 21, Spring Boot 3.5, Spring Web, Bean Validation, BCrypt
+- **Backend:** Java 21, Spring Boot 3.5, Spring Web, Spring Mail (SMTP), Bean Validation, BCrypt
 - **Modelagem de dados:** Oracle SQL (3ª Forma Normal)

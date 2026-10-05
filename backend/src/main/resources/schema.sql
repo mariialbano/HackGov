@@ -24,6 +24,31 @@ CREATE TABLE IF NOT EXISTS usuario (
     CONSTRAINT ck_usuario_perfil CHECK (perfil IN ('cidadao', 'atendente'))
 );
 
+-- O e-mail e o canal de recuperacao de senha: dois usuarios com o mesmo
+-- endereco receberiam o link um do outro. A coluna continua aceitando nulo
+-- por causa das contas criadas antes de o e-mail ser obrigatorio; a
+-- obrigatoriedade e cobrada pela API no cadastro e na edicao do perfil.
+-- (Um indice unico aceita varios nulos.)
+CREATE UNIQUE INDEX IF NOT EXISTS uk_usuario_email ON usuario (email);
+
+-- Pedidos de recuperacao de senha ("esqueci minha senha").
+--
+-- O token em si nunca e gravado: a tabela guarda apenas o SHA-256 dele.
+-- Quem ler o banco nao consegue redefinir a senha de ninguem, pelo mesmo
+-- motivo que a senha fica em hash. O token e de uso unico (usado_em) e
+-- expira (expira_em).
+CREATE TABLE IF NOT EXISTS recuperacao_senha (
+    token_hash  CHAR(64) NOT NULL,
+    cpf_usuario CHAR(11) NOT NULL,
+    criado_em   TIMESTAMP WITH TIME ZONE NOT NULL,
+    expira_em   TIMESTAMP WITH TIME ZONE NOT NULL,
+    usado_em    TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT pk_recuperacao_senha PRIMARY KEY (token_hash),
+    CONSTRAINT fk_recuperacao_usuario FOREIGN KEY (cpf_usuario) REFERENCES usuario (cpf)
+);
+
+CREATE INDEX IF NOT EXISTS ix_recuperacao_usuario ON recuperacao_senha (cpf_usuario);
+
 -- Solicitacoes abertas pelo cidadao. A etapa guarda o nome da constante do
 -- enum EtapaProtocolo (CRIADA, EM_ANALISE, CONCLUIDO); o progresso numerico
 -- exibido na tela e derivado dela em tempo de execucao, nao armazenado.
@@ -44,11 +69,21 @@ CREATE INDEX IF NOT EXISTS ix_protocolo_solicitante ON protocolo (cpf_solicitant
 -- Triagem inteligente. As colunas entram por ALTER para que um banco ja
 -- existente em disco seja atualizado sem perder os protocolos gravados.
 --
--- prioridade e seus motivos saem de regras deterministicas; tipo_sugerido e
--- confianca_sugestao guardam o que o classificador Naive Bayes sugeriu na
--- abertura, o que permite medir quantas vezes o cidadao aceitou a sugestao.
--- A confianca e relativa entre as categorias, nao uma probabilidade de acerto.
-ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS prioridade         VARCHAR(10);
+-- prioridade_pontos sai de regras deterministicas. O nivel (Baixa, Média,
+-- Alta) NAO e coluna: depende apenas dos pontos, e guarda-lo criaria uma
+-- dependencia transitiva, contrariando a 3FN. Ele e derivado em codigo,
+-- como o progresso da etapa.
+--
+-- prioridade_motivos e uma desnormalizacao deliberada: guarda, em um unico
+-- texto, a lista de motivos separados por " | ". Uma tabela filha seria a
+-- forma normalizada, mas os motivos nunca sao consultados nem filtrados
+-- individualmente: servem para o atendente ler e para auditoria, como
+-- registro do que justificou a pontuacao no momento da triagem.
+--
+-- tipo_sugerido e confianca_sugestao guardam o que o classificador Naive
+-- Bayes sugeriu, o que permite medir quantas vezes o cidadao aceitou a
+-- sugestao. A confianca e relativa entre as categorias, nao uma
+-- probabilidade de acerto.
 ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS prioridade_pontos  INT;
 ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS prioridade_motivos VARCHAR(500);
 ALTER TABLE protocolo ADD COLUMN IF NOT EXISTS tipo_sugerido      VARCHAR(120);

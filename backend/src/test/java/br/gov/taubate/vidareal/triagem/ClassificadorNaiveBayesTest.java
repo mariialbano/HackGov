@@ -94,6 +94,42 @@ class ClassificadorNaiveBayesTest {
     }
 
     @Test
+    @DisplayName("a explicação não repete a mesma palavra nem usa palavras genéricas")
+    void explicacaoSemRepeticaoNemGenericas() {
+        // "meses" e "mês" são a mesma palavra; "quero" e "como" são genéricas.
+        Resultado metas = classificador.classificar(
+                "Quero juntar R$ 12.000 em 18 meses, guardando R$ 650 por mês. É viável?");
+        Resultado duvida = classificador.classificar(
+                "Quero saber como o IPCA do simulador é calculado sobre a inflação.");
+
+        for (Resultado resultado : List.of(metas, duvida)) {
+            List<String> chaves = resultado.termosInfluentes().stream()
+                    .flatMap(termo -> PreProcessadorTexto.extrair(termo).stream())
+                    .filter(termo -> !termo.bigrama())
+                    .map(termo -> termo.chave())
+                    .toList();
+            assertEquals(chaves.size(), chaves.stream().distinct().count(),
+                    "palavra repetida em " + resultado.termosInfluentes());
+            for (String generica : List.of("quero", "como", "sobre", "bom")) {
+                assertFalse(resultado.termosInfluentes().contains(generica),
+                        "\"" + generica + "\" em " + resultado.termosInfluentes());
+            }
+        }
+        assertFalse(metas.termosInfluentes().isEmpty());
+    }
+
+    @Test
+    @DisplayName("filtrar a explicação não muda a classificação nem a confiança")
+    void explicacaoNaoAfetaClassificacao() {
+        // "Quero como sobre bom" só tem palavras genéricas: nenhuma explicação,
+        // mas a pontuação continua sendo calculada com elas.
+        Resultado resultado = classificador.classificar("Quero como sobre bom");
+        assertTrue(resultado.termosInfluentes().isEmpty());
+        assertEquals(4, resultado.palavrasConhecidas());
+        assertTrue(resultado.melhor().confianca() > 0.20, "as palavras deveriam pesar na pontuação");
+    }
+
+    @Test
     @DisplayName("as confianças somam 1 e a mesma entrada dá sempre a mesma saída")
     void deterministico() {
         String texto = "O gráfico não aparece quando faço a simulação.";

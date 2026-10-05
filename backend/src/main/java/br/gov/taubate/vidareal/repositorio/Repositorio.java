@@ -80,6 +80,12 @@ public class Repositorio {
     @Value("${vidareal.demo.senha-atendente:Atendente@123}")
     private String senhaAtendente;
 
+    @Value("${vidareal.demo.email-cidadao:maria.silva@example.com}")
+    private String emailCidadao;
+
+    @Value("${vidareal.demo.email-atendente:joao.santos@example.com}")
+    private String emailAtendente;
+
     public Repositorio(JdbcTemplate jdbc, BCryptPasswordEncoder encoder) {
         this.jdbc = jdbc;
         this.encoder = encoder;
@@ -100,6 +106,10 @@ public class Repositorio {
         Long usuarios = jdbc.queryForObject("SELECT COUNT(*) FROM usuario", Long.class);
         if (usuarios != null && usuarios > 0) {
             log.info("Banco ja povoado ({} usuario(s)): carga de demonstracao ignorada.", usuarios);
+            // Bancos criados antes de o e-mail ser obrigatorio: as contas de
+            // demonstracao ganham o endereco configurado, se ainda nao tem um.
+            preencherEmailDemo(CPF_DEMO_CIDADAO, emailCidadao);
+            preencherEmailDemo(CPF_DEMO_ATENDENTE, emailAtendente);
             return;
         }
 
@@ -107,10 +117,10 @@ public class Repositorio {
 
         // As senhas de demonstracao sao convertidas em hash na inicializacao:
         // em nenhum momento uma senha em texto puro fica armazenada.
-        adicionarUsuario(new Usuario("52998224725", encoder.encode(senhaCidadao),
-                "Maria da Silva", Perfil.CIDADAO));
-        adicionarUsuario(new Usuario("15350946056", encoder.encode(senhaAtendente),
-                "João Santos", Perfil.ATENDENTE));
+        adicionarUsuario(new Usuario(CPF_DEMO_CIDADAO, encoder.encode(senhaCidadao),
+                "Maria da Silva", emailCidadao, Perfil.CIDADAO));
+        adicionarUsuario(new Usuario(CPF_DEMO_ATENDENTE, encoder.encode(senhaAtendente),
+                "João Santos", emailAtendente, Perfil.ATENDENTE));
 
         adicionarProtocolo(new Protocolo("2026050712345", "52998224725",
                 "Análise de viabilidade de Metas Financeiras",
@@ -141,6 +151,15 @@ public class Repositorio {
     }
 
     // ---------- Usuarios ----------
+
+    private static final String CPF_DEMO_CIDADAO = "52998224725";
+    private static final String CPF_DEMO_ATENDENTE = "15350946056";
+
+    private void preencherEmailDemo(String cpf, String email) {
+        if (!emailEmUso(email, cpf)) {
+            jdbc.update("UPDATE usuario SET email = ? WHERE cpf = ? AND email IS NULL", email, cpf);
+        }
+    }
 
     private static final String COLUNAS_USUARIO =
             "cpf, senha_hash, nome, email, cep, cidade, perfil";
@@ -173,6 +192,19 @@ public class Repositorio {
         return total != null && total > 0;
     }
 
+    /**
+     * Diz se o e-mail ja pertence a OUTRA conta.
+     *
+     * @param cpfDoDono conta a desconsiderar na busca (quem esta editando
+     *                  o proprio perfil); nulo no cadastro
+     */
+    public boolean emailEmUso(String email, String cpfDoDono) {
+        Long total = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM usuario WHERE LOWER(email) = LOWER(?) AND cpf <> ?",
+                Long.class, email, cpfDoDono == null ? "" : cpfDoDono);
+        return total != null && total > 0;
+    }
+
     public void adicionarUsuario(Usuario usuario) {
         jdbc.update("INSERT INTO usuario (" + COLUNAS_USUARIO + ") VALUES (?, ?, ?, ?, ?, ?, ?)",
                 usuario.getCpf(), usuario.getSenhaHash(), usuario.getNome(), usuario.getEmail(),
@@ -195,11 +227,51 @@ public class Repositorio {
                 usuario.getCep(), usuario.getCidade(), usuario.getCpf());
     }
 
+    // ---------- Recuperacao de senha ----------
+
+    /**
+     * Registra um pedido de recuperacao. Os pedidos anteriores do mesmo
+     * usuario sao apagados: so o link mais recente vale.
+     */
+    public void criarTokenRecuperacao(String tokenHash, String cpf, Instant expiraEm) {
+        jdbc.update("DELETE FROM recuperacao_senha WHERE cpf_usuario = ?", cpf);
+        jdbc.update("""
+                INSERT INTO recuperacao_senha (token_hash, cpf_usuario, criado_em, expira_em)
+                VALUES (?, ?, ?, ?)
+                """,
+                tokenHash, cpf, paraBanco(Instant.now()), paraBanco(expiraEm));
+    }
+
+    /**
+     * Consome o token, se ele existir, nao tiver sido usado e nao estiver
+     * vencido.
+     *
+     * <p>As tres condicoes vao no WHERE de um unico UPDATE: duas requisicoes
+     * simultaneas com o mesmo token nao conseguem as duas marca-lo como
+     * usado, entao ele vale exatamente uma vez.</p>
+     *
+     * @return o CPF do dono do token, ou vazio quando o token nao vale
+     */
+    public Optional<String> consumirTokenRecuperacao(String tokenHash) {
+        Instant agora = Instant.now();
+        int marcados = jdbc.update("""
+                UPDATE recuperacao_senha
+                   SET usado_em = ?
+                 WHERE token_hash = ? AND usado_em IS NULL AND expira_em > ?
+                """,
+                paraBanco(agora), tokenHash, paraBanco(agora));
+        if (marcados != 1) {
+            return Optional.empty();
+        }
+        return jdbc.queryForList("SELECT cpf_usuario FROM recuperacao_senha WHERE token_hash = ?",
+                String.class, tokenHash).stream().findFirst();
+    }
+
     // ---------- Protocolos ----------
 
     private static final String COLUNAS_PROTOCOLO =
             "id, cpf_solicitante, tipo, descricao, etapa, aberto_em, concluido_em, "
-                    + "prioridade, prioridade_pontos, prioridade_motivos, tipo_sugerido, confianca_sugestao";
+                    + "prioridade_pontos, prioridade_motivos, tipo_sugerido, confianca_sugestao";
 
     private static final RowMapper<Protocolo> MAPA_PROTOCOLO = (rs, linha) -> {
         Protocolo protocolo = new Protocolo(
@@ -211,7 +283,6 @@ public class Repositorio {
                 lerInstante(rs, "aberto_em"),
                 lerInstante(rs, "concluido_em"));
         protocolo.registrarTriagem(
-                rs.getString("prioridade"),
                 rs.getObject("prioridade_pontos", Integer.class),
                 rs.getString("prioridade_motivos"),
                 rs.getString("tipo_sugerido"),
@@ -233,11 +304,11 @@ public class Repositorio {
 
     public void adicionarProtocolo(Protocolo protocolo) {
         jdbc.update("INSERT INTO protocolo (" + COLUNAS_PROTOCOLO
-                        + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 protocolo.getId(), protocolo.getCpfSolicitante(), protocolo.getTipo(),
                 protocolo.getDescricao(), protocolo.getEtapa().name(),
                 paraBanco(protocolo.getAbertoEm()), paraBanco(protocolo.getConcluidoEm()),
-                protocolo.getPrioridade(), protocolo.getPrioridadePontos(),
+                protocolo.getPrioridadePontos(),
                 protocolo.getPrioridadeMotivos(), protocolo.getTipoSugerido(),
                 protocolo.getConfiancaSugestao());
     }
@@ -247,13 +318,13 @@ public class Repositorio {
         jdbc.update("""
                 UPDATE protocolo
                    SET tipo = ?, descricao = ?, etapa = ?, concluido_em = ?,
-                       prioridade = ?, prioridade_pontos = ?, prioridade_motivos = ?,
+                       prioridade_pontos = ?, prioridade_motivos = ?,
                        tipo_sugerido = ?, confianca_sugestao = ?
                  WHERE id = ?
                 """,
                 protocolo.getTipo(), protocolo.getDescricao(), protocolo.getEtapa().name(),
                 paraBanco(protocolo.getConcluidoEm()),
-                protocolo.getPrioridade(), protocolo.getPrioridadePontos(),
+                protocolo.getPrioridadePontos(),
                 protocolo.getPrioridadeMotivos(), protocolo.getTipoSugerido(),
                 protocolo.getConfiancaSugestao(), protocolo.getId());
     }

@@ -4,8 +4,10 @@ import br.gov.taubate.vidareal.triagem.PreProcessadorTexto.Termo;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Classificador de texto Naive Bayes Multinomial com suavizacao de Laplace.
@@ -153,14 +155,12 @@ public class ClassificadorNaiveBayes {
      * demais classes.
      */
     private List<String> explicar(List<Termo> conhecidos, int vencedora) {
-        record Peso(String original, double valor) {
+        record Peso(Termo termo, double valor) {
         }
 
         List<Peso> pesos = new ArrayList<>();
         for (Termo termo : conhecidos) {
-            // Numeros e um "não" solto pesam na conta, mas nao dizem nada a
-            // quem le a explicacao ("não consigo", como bigrama, continua valendo).
-            if (termo.chave().contains(PreProcessadorTexto.NUMERO) || termo.chave().equals("nao")) {
+            if (!serveDeExplicacao(termo)) {
                 continue;
             }
             double demais = 0;
@@ -171,24 +171,51 @@ public class ClassificadorNaiveBayes {
             }
             double valor = logVerossimilhanca(termo.chave(), vencedora) - demais / (classes.size() - 1);
             if (valor > 0) {
-                pesos.add(new Peso(termo.original(), valor));
+                pesos.add(new Peso(termo, valor));
             }
         }
         pesos.sort(Comparator.comparingDouble(Peso::valor).reversed());
 
+        // A repeticao e conferida pela forma normalizada: "meses" e "mês"
+        // sao a mesma pista, e "consigo" depois de "não consigo" tambem.
         List<String> escolhidos = new ArrayList<>();
+        Set<String> palavrasUsadas = new HashSet<>();
         for (Peso peso : pesos) {
-            // "consigo" depois de "não consigo" seria a mesma pista repetida
-            boolean repetido = escolhidos.stream()
-                    .anyMatch(e -> e.contains(peso.original()) || peso.original().contains(e));
-            if (!repetido) {
-                escolhidos.add(peso.original());
+            List<String> palavras = List.of(peso.termo().chave().split(" "));
+            if (palavras.stream().anyMatch(palavrasUsadas::contains)) {
+                continue;
             }
+            palavrasUsadas.addAll(palavras);
+            escolhidos.add(peso.termo().original());
             if (escolhidos.size() == TERMOS_NA_EXPLICACAO) {
                 break;
             }
         }
         return escolhidos;
+    }
+
+    /**
+     * Palavras genericas pesam na conta, mas nao explicam nada a quem le:
+     * ficam fora da explicacao e continuam valendo na classificacao. Um
+     * bigrama so e descartado quando todas as suas palavras sao genericas
+     * ("não consigo" continua sendo uma boa pista).
+     */
+    private static final Set<String> GENERICAS = Set.of(
+            "nao", "quero", "queria", "gostaria", "preciso", "bom", "boa", "sobre", "como",
+            "quando", "onde", "qual", "quem", "porque", "fazer", "saber", "poder", "pode",
+            "todo", "toda", "cada", "mesmo", "ainda", "algum", "alguma", "alguem", "tudo",
+            "nada", "vou", "vai", "fica", "ficar", "dar", "hoje", "aqui", "assim", "bem");
+
+    private static boolean serveDeExplicacao(Termo termo) {
+        if (termo.chave().contains(PreProcessadorTexto.NUMERO)) {
+            return false;
+        }
+        for (String palavra : termo.chave().split(" ")) {
+            if (!GENERICAS.contains(palavra)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

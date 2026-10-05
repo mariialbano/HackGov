@@ -14,6 +14,9 @@ export default function SeletorMunicipio({
   aoTrocarMunicipio,
   idBase = 'local',
   classeSelect,
+  // Largura do campo de cidade a partir de `sm`; abaixo disso ele ocupa o
+  // espaço que sobrar na linha.
+  larguraMunicipio = 'sm:w-[13rem]',
 }) {
   const [estados, setEstados] = useState([]);
   const [municipios, setMunicipios] = useState(null); // null = ainda carregando
@@ -57,42 +60,50 @@ export default function SeletorMunicipio({
   const carregando = municipios?.paraUf !== uf;
   const lista = carregando ? [] : municipios.itens;
 
+  // A largura fica no invólucro, não no <select>: `classeSelect` pode trazer
+  // a própria largura (o estilo padrão de campo traz `w-full`), e duas
+  // classes de largura no mesmo elemento disputam — a que perdia aqui era a
+  // fixa, e os campos vazavam para fora da página.
   return (
-    <div className="flex items-center gap-2">
-      <label htmlFor={`${idBase}-uf`} className="sr-only">
-        Estado
-      </label>
-      <select
-        id={`${idBase}-uf`}
-        value={uf}
-        onChange={(e) => aoTrocarUf(e.target.value)}
-        className={`${classeSelect} w-[4.75rem] shrink-0`}
-      >
-        {estados.length === 0 && <option value={uf}>{uf}</option>}
-        {estados.map((e) => (
-          <option key={e.sigla} value={e.sigla} title={e.nome}>
-            {e.sigla}
-          </option>
-        ))}
-      </select>
+    <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+      <div className="w-[5.25rem] shrink-0">
+        <label htmlFor={`${idBase}-uf`} className="sr-only">
+          Estado
+        </label>
+        <select
+          id={`${idBase}-uf`}
+          value={uf}
+          onChange={(e) => aoTrocarUf(e.target.value)}
+          className={`${classeSelect} w-full`}
+        >
+          {estados.length === 0 && <option value={uf}>{uf}</option>}
+          {estados.map((e) => (
+            <option key={e.sigla} value={e.sigla} title={e.nome}>
+              {e.sigla}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <label htmlFor={`${idBase}-municipio`} className="sr-only">
-        Município
-      </label>
-      <select
-        id={`${idBase}-municipio`}
-        value={municipioId}
-        onChange={(e) => aoTrocarMunicipio(e.target.value)}
-        disabled={carregando}
-        className={`${classeSelect} w-[13rem] shrink-0 disabled:opacity-60`}
-      >
-        {carregando && <option value={municipioId}>Carregando municípios...</option>}
-        {lista.map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.nome}
-          </option>
-        ))}
-      </select>
+      <div className={`min-w-0 flex-1 sm:flex-none ${larguraMunicipio}`}>
+        <label htmlFor={`${idBase}-municipio`} className="sr-only">
+          Município
+        </label>
+        <select
+          id={`${idBase}-municipio`}
+          value={municipioId}
+          onChange={(e) => aoTrocarMunicipio(e.target.value)}
+          disabled={carregando}
+          className={`${classeSelect} w-full disabled:opacity-60`}
+        >
+          {carregando && <option value={municipioId}>Carregando municípios...</option>}
+          {lista.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.nome}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
