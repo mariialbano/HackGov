@@ -19,16 +19,25 @@
 .PARAMETER Desanexado
     Sobe os servicos em segundo plano e devolve o prompt imediatamente.
 
+.PARAMETER ConsoleBanco
+    Abre tambem o console web do H2 (http://localhost:8082), ja conectado ao
+    banco do projeto, com a API rodando ao mesmo tempo. Sem esta opcao o H2
+    tranca o arquivo do banco para o primeiro programa que o abrir.
+
 .EXAMPLE
     .\start.ps1
 
 .EXAMPLE
     .\start.ps1 -Desanexado
+
+.EXAMPLE
+    .\start.ps1 -ConsoleBanco
 #>
 
 param(
     [switch]$SemNavegador,
-    [switch]$Desanexado
+    [switch]$Desanexado,
+    [switch]$ConsoleBanco
 )
 
 $ErrorActionPreference = 'Stop'
@@ -184,6 +193,30 @@ if (Test-Path $arquivoEnv) {
     Escrever-Passo 'O resto do sistema funciona normalmente. Modelo em backend\.env.example'
 }
 
+# Console do banco. O H2 em arquivo aceita um programa por vez; com
+# AUTO_SERVER o primeiro a abrir (a API) passa a atender tambem o console.
+# A variavel vale so para esta execucao e e removida no fim do script.
+$jarH2    = $null
+$urlBanco = $null
+if ($ConsoleBanco) {
+    if ($env:VIDAREAL_DB_URL) {
+        Escrever-Aviso 'VIDAREAL_DB_URL ja esta definida: o console do banco nao sera aberto.'
+    } else {
+        $jarH2 = Get-ChildItem (Join-Path $env:USERPROFILE '.m2\repository\com\h2database\h2') `
+                -Recurse -Filter 'h2-*.jar' -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -notmatch 'sources|javadoc' } |
+            Sort-Object FullName -Descending | Select-Object -First 1
+        if ($jarH2) {
+            $arquivoBanco = (Join-Path $dirApi 'data\vidareal') -replace '\\', '/'
+            $urlBanco = "jdbc:h2:file:$arquivoBanco;AUTO_SERVER=TRUE"
+            $env:VIDAREAL_DB_URL = $urlBanco
+            Escrever-Ok 'Banco em modo compartilhado (API + console do H2)'
+        } else {
+            Escrever-Aviso 'Driver do H2 nao encontrado: rode .\start.ps1 uma vez sem -ConsoleBanco.'
+        }
+    }
+}
+
 if (-not (Test-Path $dirEstado)) {
     New-Item -ItemType Directory -Path $dirEstado | Out-Null
 }
@@ -197,8 +230,9 @@ Escrever-Titulo 'Iniciando os servicos'
 Liberar-Porta $portaApi 'API'
 Liberar-Porta $portaWeb 'front-end'
 
-$processoApi = $null
-$processoWeb = $null
+$processoApi     = $null
+$processoWeb     = $null
+$processoConsole = $null
 
 try {
     Escrever-Passo "Subindo a API na porta $portaApi (a primeira compilacao demora)..."
@@ -221,10 +255,26 @@ try {
     }
     Escrever-Ok "Front-end no ar em $urlWeb"
 
+    if ($urlBanco) {
+        Escrever-Passo 'Abrindo o console do banco (H2)...'
+        $argumentosConsole = @('-cp', "`"$($jarH2.FullName)`"", 'org.h2.tools.Console',
+            '-url', "`"$urlBanco`"", '-user', $(if ($env:VIDAREAL_DB_USER) { $env:VIDAREAL_DB_USER } else { 'sa' }))
+        if ($env:VIDAREAL_DB_PASSWORD) {
+            $argumentosConsole += @('-password', "`"$env:VIDAREAL_DB_PASSWORD`"")
+        }
+        $logConsole = Join-Path $dirEstado 'console.log'
+        $processoConsole = Start-Process -FilePath 'java' -ArgumentList $argumentosConsole `
+            -NoNewWindow -PassThru `
+            -RedirectStandardOutput $logConsole `
+            -RedirectStandardError (Join-Path $dirEstado 'console.err.log')
+        Escrever-Ok 'Console do banco em http://localhost:8082'
+    }
+
     # Registra o estado para o stop.ps1
     @{
         api        = $processoApi.Id
         web        = $processoWeb.Id
+        console    = $(if ($processoConsole) { $processoConsole.Id } else { $null })
         portaApi   = $portaApi
         portaWeb   = $portaWeb
         iniciadoEm = (Get-Date).ToString('o')
@@ -237,6 +287,9 @@ try {
     Escrever-Titulo 'Tudo pronto'
     Write-Host "  Site .......... $urlWeb"                           -ForegroundColor White
     Write-Host "  API ........... http://localhost:$portaApi/api/v1" -ForegroundColor White
+    if ($processoConsole) {
+        Write-Host '  Banco ......... http://localhost:8082 (console do H2)' -ForegroundColor White
+    }
     Write-Host ''
     Write-Host '  Usuarios de demonstracao' -ForegroundColor White
     Write-Host '    Cidadao ..... 529.982.247-25   Cidadao@123'   -ForegroundColor Gray
@@ -298,6 +351,12 @@ try {
     }
 
 } finally {
+    # A API ja herdou a URL; tirar daqui evita que uma proxima execucao nesta
+    # mesma janela, sem -ConsoleBanco, continue no modo compartilhado.
+    if ($urlBanco) {
+        Remove-Item Env:VIDAREAL_DB_URL -ErrorAction SilentlyContinue
+    }
+
     # Roda tambem no Ctrl+C: nao deixa servidor orfao segurando a porta
     if (-not $Desanexado) {
         foreach ($fluxo in $fluxos) {
@@ -307,7 +366,7 @@ try {
         Write-Host ''
         Write-Host '  Encerrando os servicos...' -ForegroundColor DarkYellow
 
-        foreach ($processo in @($processoApi, $processoWeb)) {
+        foreach ($processo in @($processoApi, $processoWeb, $processoConsole)) {
             if ($processo -and -not $processo.HasExited) {
                 Stop-ArvoreProcesso $processo.Id
             }

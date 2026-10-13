@@ -87,6 +87,17 @@ Nesse caso, encerre depois com:
 .\stop.ps1
 ```
 
+Para consultar o banco enquanto o sistema roda, use:
+
+```powershell
+.\start.ps1 -ConsoleBanco
+```
+
+Além do site, abre o console web do H2 em `http://localhost:8082`, já conectado
+ao banco do projeto. Sem essa opção o H2 só aceita um programa por vez: com o
+site rodando, o console não conecta. As consultas de análise ficam em
+`backend/sql/analises.sql`.
+
 ### Modo manual
 
 **Terminal 1 — backend:**

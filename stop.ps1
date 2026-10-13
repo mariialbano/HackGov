@@ -60,7 +60,8 @@ if (Test-Path $arquivoEstado) {
 
     foreach ($servico in @(
         @{ Id = $estado.api; Nome = 'API (Spring Boot)' },
-        @{ Id = $estado.web; Nome = 'Front-end (Vite)' }
+        @{ Id = $estado.web; Nome = 'Front-end (Vite)' },
+        @{ Id = $estado.console; Nome = 'Console do banco (H2)' }
     )) {
         if ($servico.Id -and (Get-Process -Id $servico.Id -ErrorAction SilentlyContinue)) {
             Stop-ArvoreProcesso $servico.Id
