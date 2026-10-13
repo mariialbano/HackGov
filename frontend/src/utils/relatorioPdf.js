@@ -48,7 +48,7 @@ export function novoRelatorio({ titulo, subtitulo }) {
   doc.setTextColor(31, 41, 51);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text('VR', MARGEM + 5.5, y + 7.4, { align: 'center' });
+  doc.text('VR', MARGEM + 5.5, y + 6.9, { align: 'center' });
 
   doc.setFontSize(15);
   doc.setTextColor(...TINTA);
@@ -96,10 +96,12 @@ export function novoRelatorio({ titulo, subtitulo }) {
     },
 
     paragrafo(texto) {
-      const linhas = doc.splitTextToSize(texto, UTIL);
-      garantirEspaco(linhas.length * 4.6 + 3);
+      // A fonte vem antes da quebra: splitTextToSize mede com a fonte atual,
+      // e medir com a da tabela anterior fazia o texto passar da margem.
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
+      const linhas = doc.splitTextToSize(texto, UTIL);
+      garantirEspaco(linhas.length * 4.6 + 3);
       doc.setTextColor(...TINTA);
       doc.text(linhas, MARGEM, y);
       y += linhas.length * 4.6 + 3;
@@ -108,21 +110,34 @@ export function novoRelatorio({ titulo, subtitulo }) {
 
     /** Lista rótulo/valor, com o valor alinhado à direita. */
     campos(pares) {
+      const larguraRotulo = UTIL * 0.38;
+      const entreLinhas = 4.2;
       doc.setFontSize(9.5);
-      pares.forEach(([rotulo, valor]) => {
-        garantirEspaco(7);
+      y -= 2.5; // aproxima a primeira linha do título da seção
+      pares.forEach(([rotulo, valor], indice) => {
+        // Valor longo quebra em linhas dentro da sua coluna, sem invadir o rótulo.
+        doc.setFont('helvetica', 'bold');
+        const linhasValor = doc.splitTextToSize(String(valor), UTIL - larguraRotulo - 4);
+        const altura = 3 + linhasValor.length * entreLinhas;
+        garantirEspaco(altura);
+
+        // A divisória fica no topo de cada linha (exceto a primeira), no
+        // espaço entre os textos, e não cortando as letras.
+        if (indice > 0) {
+          doc.setDrawColor(230, 224, 216);
+          doc.setLineWidth(0.15);
+          doc.line(MARGEM, y, LARGURA - MARGEM, y);
+        }
+        const base = y + 4.4;
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(...CINZA);
-        doc.text(String(rotulo), MARGEM, y);
+        doc.text(String(rotulo), MARGEM, base);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...TINTA);
-        doc.text(String(valor), LARGURA - MARGEM, y, { align: 'right' });
-        y += 5.4;
-        doc.setDrawColor(230, 224, 216);
-        doc.setLineWidth(0.15);
-        doc.line(MARGEM, y - 1.8, LARGURA - MARGEM, y - 1.8);
+        doc.text(linhasValor, LARGURA - MARGEM, base, { align: 'right', lineHeightFactor: 1.25 });
+        y += altura;
       });
-      y += 4;
+      y += 7;
       return api;
     },
 
@@ -158,7 +173,7 @@ export function novoRelatorio({ titulo, subtitulo }) {
       garantirEspaco(alturaCabecalho + alturaLinha);
       desenharCabecalho();
 
-      linhas.forEach((linha) => {
+      linhas.forEach((linha, indice) => {
         const antes = y;
         garantirEspaco(alturaLinha);
         // Se garantirEspaco virou a página, o cabeçalho volta no topo.
@@ -173,20 +188,23 @@ export function novoRelatorio({ titulo, subtitulo }) {
           doc.text(String(celula), posicao(i), y + 4.2, { align: alinhamentos[i] ?? 'left' });
         });
         y += alturaLinha;
-        doc.setDrawColor(235, 230, 223);
-        doc.setLineWidth(0.15);
-        doc.line(MARGEM, y - 1.5, LARGURA - MARGEM, y - 1.5);
+        // Divisória no limite inferior da linha, abaixo das letras.
+        if (indice < linhas.length - 1) {
+          doc.setDrawColor(235, 230, 223);
+          doc.setLineWidth(0.15);
+          doc.line(MARGEM, y, LARGURA - MARGEM, y);
+        }
       });
-      y += 4;
+      y += 6;
       return api;
     },
 
     /** Nota de rodapé do conteúdo — normalmente a citação da fonte. */
     nota(texto) {
-      const linhas = doc.splitTextToSize(texto, UTIL);
-      garantirEspaco(linhas.length * 4 + 4);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
+      const linhas = doc.splitTextToSize(texto, UTIL);
+      garantirEspaco(linhas.length * 4 + 4);
       doc.setTextColor(...CINZA);
       doc.text(linhas, MARGEM, y);
       y += linhas.length * 4 + 3;
