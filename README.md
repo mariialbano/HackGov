@@ -55,23 +55,35 @@ VidaReal/
 
 ## Como rodar
 
-**Pré-requisitos:** [Java 21+](https://adoptium.net) para o backend e
-[Node.js 18+](https://nodejs.org) para o front-end. O Maven não precisa ser
-instalado: o projeto usa o Maven Wrapper (`backend/mvnw`), que baixa a
-versão correta na primeira execução.
+**Pré-requisitos:** só o Windows 10 ou 11 com internet. O `start` confere o
+[JDK 21+](https://adoptium.net) e o [Node.js](https://nodejs.org) (20.19+ ou
+22.12+): se faltar algum, ou se a versão instalada for antiga, ele baixa uma
+cópia só para o projeto em `%LOCALAPPDATA%\VidaReal`, sem pedir administrador
+e sem mexer no resto do computador. O Maven também não precisa ser instalado:
+o projeto usa o Maven Wrapper (`backend/mvnw`).
 
 ### Modo rápido (recomendado)
 
-Na raiz do projeto:
+Dê dois cliques em **`start.cmd`**, na raiz do projeto. Pelo terminal:
 
 ```powershell
-.\start.ps1
+.\start.cmd
 ```
 
-O script confere os pré-requisitos, instala as dependências do front-end na
-primeira execução, carrega o `backend/.env`, sobe a API e a interface **na
-mesma janela** — com os logs dos dois serviços intercalados e identificados
-por `[API]` e `[WEB]` — espera cada um responder e abre o navegador.
+O `start.cmd` chama o `start.ps1` liberando a execução de scripts só para ele
+(num Windows novo o PowerShell bloqueia `.\start.ps1`). Quem já roda scripts
+pode continuar usando `.\start.ps1`; as opções abaixo valem para os dois.
+
+O script confere os pré-requisitos e baixa o que faltar, instala as
+dependências do front-end e compila a API na primeira execução, carrega o
+`backend/.env`, sobe a API e a interface **na mesma janela** — com os logs dos
+dois serviços intercalados e identificados por `[API]` e `[WEB]` — espera cada
+um responder e abre o navegador.
+
+Na primeira vez num computador novo o processo leva de 5 a 15 minutos,
+conforme a internet (baixa cerca de 400 MB); das próximas vezes, segundos. Se
+a internet cair no meio, basta rodar de novo: ele continua de onde parou.
+Prefira uma pasta curta e fora do OneDrive, como `C:\VidaReal`.
 
 **`Ctrl+C` encerra os dois serviços** e devolve o terminal.
 
@@ -81,7 +93,7 @@ Se preferir liberar o terminal e deixar tudo rodando em segundo plano:
 .\start.ps1 -Desanexado
 ```
 
-Nesse caso, encerre depois com:
+Nesse caso, encerre depois com `stop.cmd` (dois cliques) ou:
 
 ```powershell
 .\stop.ps1
@@ -93,8 +105,8 @@ Para consultar o banco enquanto o sistema roda, use:
 .\start.ps1 -ConsoleBanco
 ```
 
-Além do site, abre o console web do H2 em `http://localhost:8082`, já conectado
-ao banco do projeto. Sem essa opção o H2 só aceita um programa por vez: com o
+Além do site, abre o console web do H2 em `http://localhost:8082`, com o banco
+do projeto já preenchido: basta clicar em **Connect**. Sem essa opção o H2 só aceita um programa por vez: com o
 site rodando, o console não conecta. As consultas de análise ficam em
 `backend/sql/analises.sql`.
 

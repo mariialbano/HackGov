@@ -1,0 +1,4 @@
+# Arquivos do Prompt de Comando precisam de CRLF; com LF o cmd.exe pode
+# executar linhas erradas. Ficam como estao, sem conversao do git.
+*.cmd -text
+*.bat -text

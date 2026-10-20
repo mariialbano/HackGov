@@ -24,7 +24,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 
 $raiz         = $PSScriptRoot
 $arquivoEstado = Join-Path $raiz '.run\servicos.json'
-$portas       = @(3001, 5173)
+$portas       = @(3001, 5173, 8082)
 
 function Escrever($texto, $cor = 'Gray') {
     if (-not $Silencioso) { Write-Host $texto -ForegroundColor $cor }
@@ -101,6 +101,6 @@ if ($aindaOcupadas.Count -gt 0) {
 } elseif ($encerrados -eq 0) {
     Escrever '  Nada estava rodando.' 'DarkGray'
 } else {
-    Escrever '  Tudo encerrado. Portas 3001 e 5173 livres.' 'Green'
+    Escrever '  Tudo encerrado. Portas livres.' 'Green'
 }
 Escrever ''
