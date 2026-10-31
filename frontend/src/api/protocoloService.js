@@ -46,3 +46,8 @@ export function excluirProtocolo(id) {
 export function obterEstatisticas() {
   return api.get('/protocolos/estatisticas');
 }
+
+// Análises estatísticas (Spearman e tendência de volume) — só para o atendente.
+export function obterAnalises() {
+  return api.get('/protocolos/analises');
+}
