@@ -207,6 +207,36 @@ recuperação apenas como SHA-256. Os demais dados (nome, CPF, e-mail) ficam
 em texto, protegidos pelo fato de o arquivo não sair da máquina; cifrar o
 banco em disco seria o passo seguinte para um ambiente de produção.
 
+### Backup e restauração do banco
+
+Dois scripts em `backend/`, sobre as ferramentas do próprio H2 (`Script` e
+`RunScript`), sem dependência nova. Com a API **parada** (`.\stop.ps1`: o H2 em
+arquivo aceita um programa por vez):
+
+```powershell
+cd backend
+.\backup-banco.ps1                                   # grava backups\vidareal-AAAAMMDD-HHMMSS.sql
+.\restaurar-banco.ps1 -Backup .\backups\vidareal-20261030-234911.sql
+```
+
+- O backup é um arquivo `.sql` com o esquema e todos os dados; o script mostra
+  o tamanho e o SHA-256 do arquivo.
+- A restauração **não apaga** o banco atual: ele é movido para
+  `backend/data/antes-da-restauracao-AAAAMMDD-HHMMSS/` e o backup é carregado em
+  um banco novo. Se a carga falhar, o banco original volta ao lugar.
+- Com a API no ar, os dois scripts recusam rodar (o arquivo está em uso).
+- Depois de restaurar, `GET /api/v1/auditoria/integridade` (atendente) confere
+  que a cadeia de hashes da auditoria veio inteira.
+- `backend/backups/` está no `.gitignore`: o backup contém dados dos cidadãos
+  (CPF, e-mail) em texto, então deve ser guardado com o mesmo cuidado do banco.
+
+Limites: o backup é manual (não há agendamento) e fica na mesma máquina do
+banco, o que não protege contra a perda do computador. Em produção seria
+automático, cifrado e copiado para outro local. Parar a API com `.\stop.ps1`
+encerra o processo à força: gravações dos últimos instantes antes da parada
+podem não ter chegado ao disco, então convém esperar alguns segundos depois da
+última operação antes de parar e fazer o backup.
+
 ### Usuários de demonstração
 
 | Perfil    | CPF            | Senha         | Acesso                          |

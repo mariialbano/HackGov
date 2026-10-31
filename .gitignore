@@ -21,3 +21,6 @@ backend/data/
 
 # Configuracao local do Claude Code, nao faz parte do projeto.
 .claude/
+
+# Backups do banco (contem dados dos cidadaos): nunca versionar
+backend/backups/
