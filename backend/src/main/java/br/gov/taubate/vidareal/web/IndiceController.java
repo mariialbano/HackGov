@@ -47,6 +47,7 @@ public class IndiceController {
         recursos.put("protocolos",
                 "GET|POST /api/v1/protocolos · GET|PUT|DELETE /api/v1/protocolos/{id} · "
                         + "PATCH /api/v1/protocolos/{id}/status · GET /api/v1/protocolos/estatisticas · "
+                        + "GET /api/v1/protocolos/analises (atendente) · "
                         + "POST /api/v1/protocolos/sugestao (IA) · "
                         + "GET /api/v1/protocolos/triagem/modelo (atendente)");
         recursos.put("metas",

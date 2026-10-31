@@ -1,5 +1,6 @@
 package br.gov.taubate.vidareal.web;
 
+import br.gov.taubate.vidareal.analise.AnaliseProtocolos;
 import br.gov.taubate.vidareal.erro.ApiException;
 import br.gov.taubate.vidareal.erro.ErroCampo;
 import br.gov.taubate.vidareal.modelo.EtapaProtocolo;
@@ -167,6 +168,16 @@ public class ProtocoloController {
         resposta.put("porTipo", porTipo);
         resposta.put("tempoResolucaoDias", tempoResolucao);
         return resposta;
+    }
+
+    // ---------- GET /protocolos/analises ----------
+    // Atendente: analisa todos os protocolos (prioridade x tempo e tendencia
+    // de volume). Os calculos ficam em AnaliseProtocolos.
+
+    @GetMapping("/analises")
+    @Autenticado(perfis = Perfil.ATENDENTE)
+    public Map<String, Object> analises() {
+        return AnaliseProtocolos.montar(repositorio.listarProtocolos());
     }
 
     // ---------- POST /protocolos/sugestao ----------
