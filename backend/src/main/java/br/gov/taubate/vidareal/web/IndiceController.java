@@ -4,6 +4,7 @@ import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.RegistroAuditoria;
 import br.gov.taubate.vidareal.repositorio.Repositorio;
 import br.gov.taubate.vidareal.seguranca.Autenticado;
+import br.gov.taubate.vidareal.seguranca.CadeiaAuditoria;
 import br.gov.taubate.vidareal.web.dto.Pagina;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,7 +54,8 @@ public class IndiceController {
                         + "PATCH /api/v1/metas/{id}/aporte");
         recursos.put("feedbacks", "POST /api/v1/feedbacks · GET /api/v1/feedbacks (atendente)");
         recursos.put("chat", "POST /api/v1/chat");
-        recursos.put("auditoria", "GET /api/v1/auditoria (atendente)");
+        recursos.put("auditoria",
+                "GET /api/v1/auditoria (atendente) · GET /api/v1/auditoria/integridade (atendente)");
         recursos.put("dados",
                 "GET /api/v1/dados/ipca · GET /api/v1/dados/selic · "
                         + "GET /api/v1/dados/feriados · GET /api/v1/dados/prazo · "
@@ -83,5 +85,15 @@ public class IndiceController {
 
         List<RegistroAuditoria> registros = repositorio.listarAuditoria();
         return Pagina.de(registros, paginaSegura, limiteSeguro);
+    }
+
+    /**
+     * Confere a cadeia de hashes da trilha: devolve se esta integra e, se nao,
+     * o primeiro registro que nao confere. Exclusiva do atendente.
+     */
+    @GetMapping("/auditoria/integridade")
+    @Autenticado(perfis = Perfil.ATENDENTE)
+    public CadeiaAuditoria.Resultado integridadeDaAuditoria() {
+        return CadeiaAuditoria.verificar(repositorio.listarAuditoriaCronologica());
     }
 }
