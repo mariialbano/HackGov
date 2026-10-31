@@ -237,6 +237,28 @@ encerra o processo à força: gravações dos últimos instantes antes da parada
 podem não ter chegado ao disco, então convém esperar alguns segundos depois da
 última operação antes de parar e fazer o backup.
 
+### Dados de exemplo (fictícios) e análises estatísticas
+
+O banco novo nasce com 4 protocolos de demonstração: pouco para as análises do
+painel do atendente (Spearman e tendência de volume), que pedem ao menos 10
+protocolos concluídos com triagem e 4 semanas completas. Para demonstrá-las,
+carregue o conjunto de exemplo de `backend/sql/dados-exemplo.sql`: 13 cidadãos,
+84 protocolos, 41 avaliações e 15 metas, **todos fictícios** (os protocolos têm
+id `EX-...`).
+
+```powershell
+.\start.ps1               # uma vez, para criar o banco; depois .\stop.ps1
+cd backend
+.\carregar-dados-exemplo.ps1             # carrega (pode repetir: recarrega o mesmo conteúdo)
+.\carregar-dados-exemplo.ps1 -Remover    # apaga só os exemplos; os dados reais ficam
+```
+
+Suba a API de novo e entre como atendente (153.509.460-56): o Dashboard mostra
+**Análises dos protocolos**, com a faixa "Dados fictícios de demonstração". Sem
+dados de exemplo, a seção explica que a amostra é insuficiente em vez de
+mostrar um número. Os resultados descrevem os dados de exemplo, não o
+atendimento real.
+
 ### Usuários de demonstração
 
 | Perfil    | CPF            | Senha         | Acesso                          |
