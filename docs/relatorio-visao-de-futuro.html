@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>HackGov: Atividade Visão de Futuro</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm 24mm 20mm;
+    @bottom-center { content: counter(page); font: 9pt "Segoe UI", Arial, sans-serif; color: #666; } }
+  @page :first { margin: 0; @bottom-center { content: none; } }
+
+  :root { --ink:#1b1b1f; --mut:#55555c; --line:#d6d6dc; --soft:#f4f5f8; --az:#1f3a68; --az2:#e8eef8;
+          --ver:#1b6b3f; --verbg:#e4f4ea; --am:#8a5a00; --ambg:#fff1d6; --rox:#4b3a8a; --roxbg:#ece8fa; }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.5 "Segoe UI", Calibri, Arial, sans-serif; color: var(--ink); margin: 0; text-align: left; }
+  p { margin: 0 0 8pt; } ul, ol { margin: 0 0 8pt; padding-left: 18pt; } li { margin-bottom: 3pt; }
+  h1 { font-size: 19pt; color: var(--az); margin: 0 0 10pt; padding-bottom: 5pt; border-bottom: 2px solid var(--az);
+       break-before: page; break-after: avoid; }
+  h2 { font-size: 13.5pt; color: var(--az); margin: 16pt 0 6pt; break-after: avoid; }
+  h3 { font-size: 11.5pt; color: #222; margin: 12pt 0 4pt; break-after: avoid; }
+  h4 { font-size: 10.5pt; color: var(--mut); margin: 8pt 0 3pt; text-transform: uppercase; letter-spacing: .04em; break-after: avoid; }
+  code { font: 9pt Consolas, "Courier New", monospace; background: var(--soft); padding: 0 3pt; border-radius: 3px; }
+  pre { font: 8.4pt/1.4 Consolas, "Courier New", monospace; background: #f6f7f9; border: 1px solid var(--line);
+        border-radius: 5px; padding: 7pt 9pt; margin: 0 0 9pt; white-space: pre-wrap; word-break: break-word; break-inside: avoid; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 10pt; font-size: 9.2pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 4pt 6pt; vertical-align: top; text-align: left; }
+  th { background: var(--az2); color: #14284a; font-weight: 600; }
+  tr { break-inside: avoid; }
+  caption { caption-side: top; text-align: left; font-weight: 600; font-size: 9.2pt; color: var(--mut); padding: 0 0 3pt; }
+  .tag { display: inline-block; font-size: 7.8pt; font-weight: 700; padding: 0 5pt; border-radius: 9px; white-space: nowrap; border: 1px solid; }
+  .ex  { color: #2d2d33; background: #ececf0; border-color: #b9b9c2; }
+  .im  { color: var(--ver); background: var(--verbg); border-color: #8cc9a4; }
+  .pa  { color: var(--am); background: var(--ambg); border-color: #e0b95c; }
+  .fu  { color: var(--rox); background: var(--roxbg); border-color: #b3a6e6; }
+  .box { border: 1px solid var(--line); border-left: 4px solid var(--az); background: var(--soft); padding: 7pt 10pt; margin: 6pt 0 10pt; border-radius: 4px; break-inside: avoid; }
+  .box.aviso { border-left-color: #c47f00; background: #fff8e8; }
+  .box.ok { border-left-color: var(--ver); background: #f1faf4; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; text-align: center; }
+  figure img { max-width: 100%; border: 1px solid var(--line); border-radius: 4px; }
+  figure svg { max-width: 100%; height: auto; }
+  figcaption { font-size: 8.8pt; color: var(--mut); margin-top: 3pt; text-align: left; }
+  .small { font-size: 9pt; color: var(--mut); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .toc li { margin-bottom: 2pt; list-style: none; } .toc ol { padding-left: 0; }
+  .toc .sub { padding-left: 16pt; font-size: 9.6pt; color: var(--mut); }
+
+  /* capa */
+  .capa { height: 297mm; padding: 34mm 26mm 20mm; display: flex; flex-direction: column; justify-content: space-between;
+          background: linear-gradient(180deg, #f2f5fb 0%, #ffffff 55%); border-left: 10mm solid var(--az); }
+  .capa .inst { font-size: 12pt; letter-spacing: .12em; text-transform: uppercase; color: var(--az); font-weight: 700; }
+  .capa h1 { all: unset; display: block; font-size: 31pt; line-height: 1.12; color: var(--az); margin-top: 22mm; font-weight: 700; }
+  .capa .sub { font-size: 14pt; color: #333; margin-top: 8mm; line-height: 1.4; }
+  .capa .nome { font-size: 10.5pt; color: var(--mut); margin-top: 6mm; }
+  .capa table.campos { width: 100%; font-size: 11pt; margin-top: 8mm; }
+  .capa table.campos td { border: none; border-bottom: 1px solid #999; padding: 9pt 4pt 2pt; height: 20pt; }
+  .capa table.campos td.r { width: 26mm; border-bottom: none; color: var(--mut); padding-left: 0; font-size: 10pt; }
+  .capa .rodape { font-size: 10pt; color: var(--mut); }
+</style>
+</head>
+<body>
+
+<!-- ============================ CAPA ============================ -->
+<section class="capa">
+  <div>
+    <div class="inst">FIAP</div>
+    <h1>Atividade Visão de Futuro</h1>
+    <div class="sub">HackGov: segurança da informação, redes de comunicação,<br>estatística aplicada e blockchain</div>
+    <div class="nome">O projeto é chamado <b>HackGov</b> na atividade e <b>VidaReal</b> no código-fonte (pacote <code>br.gov.taubate.vidareal</code>): trata-se do mesmo sistema.</div>
+  </div>
+  <table class="campos">
+    <tr><td class="r">Nome</td><td>&nbsp;</td></tr>
+    <tr><td class="r">RM</td><td>&nbsp;</td></tr>
+    <tr><td class="r">Turma</td><td>&nbsp;</td></tr>
+    <tr><td class="r">Professor(a)</td><td>&nbsp;</td></tr>
+  </table>
+  <div class="rodape">Outubro de 2026 · Documento técnico das quatro partes da atividade</div>
+</section>
+
+<!-- ============================ SUMÁRIO ============================ -->
+<h1>Sumário</h1>
+<div class="toc">
+<ol>
+  <li><b>Resumo e convenções deste documento</b></li>
+  <li><b>1. O HackGov: contexto e diagnóstico do sistema</b></li>
+  <li class="sub">1.1 Objetivo · 1.2 Arquitetura · 1.3 Tecnologias · 1.4 Modelo de dados · 1.5 Autenticação e autorização · 1.6 Divergências entre documentação e código · 1.7 Linha de base dos testes</li>
+  <li><b>2. Parte 1: Segurança da Informação</b></li>
+  <li class="sub">2.1 Contextualização (Tríade CIA) · 2.2 Cenário atual · 2.3 Evoluções implementadas (S1 a S4) · 2.4 Cenário de incidente simulado · 2.5 Políticas técnicas: situação e recomendações</li>
+  <li><b>3. Parte 2: Redes de Comunicação</b></li>
+  <li class="sub">3.1 Mapa das comunicações · 3.2 Relação com a Tríade CIA · 3.3 Resiliência · 3.4 Topologia recomendada (não implementada)</li>
+  <li><b>4. Parte 3: Estatística Aplicada e Tomada de Decisão</b></li>
+  <li class="sub">4.1 Dados disponíveis · 4.2 Análises · 4.3 Implementação · 4.4 Validação · 4.5 Resultados (dados fictícios) · 4.6 Limitações</li>
+  <li><b>5. Parte 4: Blockchain e Smart Contracts</b></li>
+  <li class="sub">5.1 Caso de uso · 5.2 Dados ou hashes? · 5.3 O contrato · 5.4 Testes, deploy e demonstração · 5.5 Integração futura · 5.6 Limitações</li>
+  <li><b>6. Resultados consolidados dos testes</b></li>
+  <li><b>7. Quadro de requisitos da atividade</b></li>
+  <li><b>8. Limitações e riscos conhecidos</b></li>
+  <li><b>9. Recomendações para trabalhos futuros e conclusão</b></li>
+  <li><b>Apêndice A: como reproduzir · Apêndice B: arquivos · Referências</b></li>
+</ol>
+</div>
+
+<!-- ============================ RESUMO ============================ -->
+<h1>Resumo e convenções deste documento</h1>
+
+<h2>Resumo</h2>
+<p>Este documento descreve a evolução do HackGov, plataforma GovTech de educação financeira e transparência para o cidadão de Taubaté/SP, na atividade "Visão de Futuro". Partiu-se de um diagnóstico do sistema existente, lido diretamente no código, e foram implementadas melhorias pequenas, testadas e demonstráveis em quatro frentes: <b>segurança da informação</b> (expiração de sessão no servidor, chave da IA fora da URL, backup e restauração do banco e cadeia de hashes na trilha de auditoria); <b>redes de comunicação</b> (análise da arquitetura real, sem infraestrutura nova); <b>estatística aplicada</b> (correlação de Spearman e regressão linear, calculadas em Java e exibidas no painel do atendente); e <b>blockchain</b> (contrato Solidity que registra hashes dos eventos de protocolos, testado e implantado em rede local).</p>
+<p>O trabalho final soma <b>117 testes automatizados no backend</b> (62 pré-existentes e 55 novos) e <b>22 testes do contrato</b>, todos aprovados na última execução, além de verificações manuais descritas ao longo do texto.</p>
+
+<h2>Convenções</h2>
+<p>Para separar o que existe do que foi construído e do que é apenas proposta, cada capacidade recebe um rótulo:</p>
+<table>
+  <tr><td style="width:24%"><span class="tag ex">Existente</span></td><td>Já estava implementado no repositório antes da atividade (com evidência no código).</td></tr>
+  <tr><td><span class="tag im">Implementado</span></td><td>Construído nesta atividade, com teste ou verificação registrada.</td></tr>
+  <tr><td><span class="tag pa">Parcial</span></td><td>Existe parte da capacidade; o que falta está descrito.</td></tr>
+  <tr><td><span class="tag fu">Futuro</span></td><td>Apenas recomendação ou proposta. <b>Não foi construído.</b></td></tr>
+</table>
+<div class="box aviso">
+  <p><b>Dados fictícios.</b> Todos os resultados estatísticos deste documento foram calculados sobre os dados de demonstração do arquivo <code>backend/sql/dados-exemplo.sql</code>, que são <b>inventados</b> (protocolos com identificador <code>EX-...</code>). Eles descrevem esse conjunto de exemplo, não o atendimento real de nenhuma prefeitura.</p>
+</div>
+<p><b>Rigor.</b> Os números citados vêm de execuções reais (testes, scripts e consultas) registradas na seção 6. Quando algo não foi verificado, o texto diz que não foi. As referências ao final se limitam a fontes que o próprio projeto usa ou que são oficialmente identificáveis; recomenda-se conferi-las antes da entrega.</p>
+<p><b>Trabalho individual.</b> O escopo foi mantido propositalmente simples: nenhuma funcionalidade existente foi substituída, as regras de negócio não foram alteradas, e as melhorias mais complexas aparecem apenas como recomendação.</p>
+
+<!-- ============================ 1. DIAGNÓSTICO ============================ -->
+<h1>1. O HackGov: contexto e diagnóstico do sistema</h1>
+
+<h2>1.1 Objetivo</h2>
+<p>O sistema oferece ao cidadão um canal digital para abrir e acompanhar <b>protocolos</b> (solicitações) junto à prefeitura e ferramentas de planejamento financeiro (simulação de inflação, metas) e de transparência (indicadores municipais do IBGE e do Banco Central). O atendente público tramita os protocolos e dispõe de uma fila com triagem automática: um classificador Naive Bayes sugere a categoria e regras determinísticas calculam a prioridade. O núcleo transacional é o protocolo; as demais telas o cercam.</p>
+
+<h2>1.2 Arquitetura</h2>
+<p>A aplicação é um monolito em camadas: uma SPA React consome uma API REST em Spring Boot, que acessa um banco H2 em arquivo por JDBC (<code>Repositorio.java</code>, SQL puro, sem ORM) e consulta serviços externos.</p>
+
+<figure>
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+  <defs><marker id="s" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1f3a68"/></marker></defs>
+  <rect x="10" y="100" width="150" height="80" rx="8" fill="#e8eef8" stroke="#1f3a68"/>
+  <text x="85" y="132" text-anchor="middle" font-weight="700">Navegador</text><text x="85" y="150" text-anchor="middle">React + Vite (:5173)</text><text x="85" y="166" text-anchor="middle">token em sessionStorage</text>
+  <rect x="300" y="60" width="170" height="160" rx="8" fill="#e8eef8" stroke="#1f3a68"/>
+  <text x="385" y="86" text-anchor="middle" font-weight="700">API Spring Boot (:3001)</text>
+  <text x="385" y="110" text-anchor="middle">interceptor de autenticação</text><text x="385" y="126" text-anchor="middle">controllers por recurso</text>
+  <text x="385" y="142" text-anchor="middle">triagem (Naive Bayes)</text><text x="385" y="158" text-anchor="middle">análises estatísticas</text>
+  <text x="385" y="174" text-anchor="middle">trilha de auditoria + hashes</text><text x="385" y="190" text-anchor="middle">cache de dados públicos</text>
+  <rect x="610" y="100" width="140" height="80" rx="8" fill="#e4f4ea" stroke="#1b6b3f"/>
+  <text x="680" y="132" text-anchor="middle" font-weight="700">Banco H2</text><text x="680" y="150" text-anchor="middle">arquivo local</text><text x="680" y="166" text-anchor="middle">(mesmo processo)</text>
+  <line x1="160" y1="140" x2="298" y2="140" stroke="#1f3a68" stroke-width="1.6" marker-end="url(#s)"/>
+  <text x="229" y="130" text-anchor="middle" font-size="11">HTTP + JSON</text>
+  <line x1="470" y1="140" x2="608" y2="140" stroke="#1f3a68" stroke-width="1.6" marker-end="url(#s)"/>
+  <text x="539" y="130" text-anchor="middle" font-size="11">JDBC (sem rede)</text>
+  <rect x="190" y="250" width="170" height="38" rx="6" fill="#f4f5f8" stroke="#888"/><text x="275" y="266" text-anchor="middle">BCB, IBGE, BrasilAPI,</text><text x="275" y="281" text-anchor="middle">ViaCEP, OSM (HTTPS)</text>
+  <rect x="372" y="250" width="178" height="38" rx="6" fill="#f4f5f8" stroke="#888"/><text x="461" y="266" text-anchor="middle">Google Gemini</text><text x="461" y="281" text-anchor="middle">(HTTPS, chave em cabeçalho)</text>
+  <rect x="566" y="250" width="170" height="38" rx="6" fill="#f4f5f8" stroke="#888"/><text x="651" y="266" text-anchor="middle">Servidor SMTP</text><text x="651" y="281" text-anchor="middle">(STARTTLS obrigatório)</text>
+  <line x1="340" y1="220" x2="290" y2="248" stroke="#1f3a68" marker-end="url(#s)"/><line x1="410" y1="220" x2="450" y2="248" stroke="#1f3a68" marker-end="url(#s)"/><line x1="450" y1="210" x2="610" y2="248" stroke="#1f3a68" marker-end="url(#s)"/>
+</svg>
+<figcaption><b>Figura 1.</b> Arquitetura existente, deduzida do código (<code>WebConfig</code>, <code>application.properties</code>, <code>DadosPublicosService</code>, <code>ChatController</code>, <code>EmailRecuperacao</code>).</figcaption>
+</figure>
+
+<h2>1.3 Tecnologias</h2>
+<table>
+  <tr><th style="width:18%">Camada</th><th>O que existe (evidência: <code>pom.xml</code>, <code>package.json</code>)</th></tr>
+  <tr><td>Frontend</td><td>React 19, Vite 8, Tailwind 4, React Router 7, Recharts, Leaflet, jsPDF</td></tr>
+  <tr><td>Backend</td><td>Java 21, Spring Boot 3.5 (web, validation, jdbc, mail) e <code>spring-security-crypto</code> apenas para o BCrypt (sem o framework Spring Security)</td></tr>
+  <tr><td>Banco</td><td>H2 em arquivo, <code>schema.sql</code> idempotente, modelado em 3ª forma normal e compatível com Oracle por troca da URL</td></tr>
+  <tr><td>Execução</td><td><code>start.ps1</code> baixa JDK e Node se faltarem (conferindo SHA-256) e sobe API e interface; Maven Wrapper. Não há Docker nem integração contínua</td></tr>
+  <tr><td>Testes</td><td>JUnit 5 com MockMvc e H2 em memória. O frontend não possui testes automatizados</td></tr>
+</table>
+<p>Python não existe no repositório e não foi introduzido. Na raiz existem arquivos Java legados (<code>Main.java</code>, <code>Usuario.java</code> etc.), um protótipo de console de etapa anterior sem relação com a aplicação, que não foram modificados.</p>
+
+<h2>1.4 Modelo de dados</h2>
+<table>
+  <tr><th style="width:17%">Tabela</th><th style="width:20%">Chave</th><th>Observações</th></tr>
+  <tr><td><code>usuario</code></td><td>CPF (chave natural)</td><td>Perfil <code>cidadao</code> ou <code>atendente</code> (restrição CHECK); e-mail único; guarda só CEP e cidade, por minimização de dados</td></tr>
+  <tr><td><code>recuperacao_senha</code></td><td>SHA-256 do token</td><td>Uso único e com expiração; o token em si nunca é gravado</td></tr>
+  <tr><td><code>protocolo</code></td><td>número (data + 5 dígitos)</td><td>Etapa, datas de abertura e conclusão; colunas da triagem (pontos, motivos, categoria sugerida, confiança)</td></tr>
+  <tr><td><code>meta</code></td><td>sequência</td><td>Valores em DECIMAL; prazo em texto livre</td></tr>
+  <tr><td><code>feedback</code></td><td>sequência</td><td>Anônimo de propósito, sem vínculo com usuário</td></tr>
+  <tr><td><code>auditoria</code></td><td>identidade</td><td>Quem fez o quê e quando; sem chave estrangeira, para registrar também tentativas de login recusadas</td></tr>
+</table>
+
+<h2>1.5 Autenticação e autorização</h2>
+<p>O login usa CPF e senha com <b>BCrypt (custo 10)</b>. Quando o CPF não existe, o servidor compara contra um hash falso para igualar o tempo de resposta, e a mensagem de erro é genérica, o que dificulta a enumeração de usuários. A sessão é um token opaco de 256 bits (<code>SecureRandom</code>) mantido em memória (<code>SessaoService</code>). A autorização é declarativa: a anotação <code>@Autenticado(perfis = ...)</code> é aplicada por um interceptor antes do controller, devolvendo 401 (não identificado) ou 403 (perfil insuficiente). Um cidadão que pede o protocolo de outro recebe 404, não 403, para não confirmar a existência do registro. Há ainda limitação de requisições por IP (login: 5 a cada 15 minutos; recuperação de senha: 10; chat: 20 por minuto; sugestão de triagem: 60 por minuto).</p>
+
+<h2>1.6 Divergências entre documentação e código</h2>
+<p>A análise tratou a documentação como hipótese e procurou evidência no código. Foram encontradas as divergências abaixo; <b>nenhuma foi corrigida</b>, por estarem fora do escopo, e todas constam também como limitações (seção 8).</p>
+<table>
+  <tr><th style="width:4%">#</th><th style="width:30%">A documentação afirma</th><th>O código mostra</th></tr>
+  <tr><td>1</td><td>A sessão expira após 15 minutos de inatividade</td><td>Isso só ocorria no navegador (<code>AuthContext.jsx</code>). No servidor, um token continuava válido até o logout ou o reinício. <b>Corrigido na etapa S1.</b></td></tr>
+  <tr><td>2</td><td>Metas financeiras persistidas</td><td>A tela <code>Metas.jsx</code> usa <code>localStorage</code>. O CRUD <code>/api/v1/metas</code> existe e é testado, mas nenhuma tela o chama. O histórico do simulador de inflação também fica em <code>localStorage</code></td></tr>
+  <tr><td>3</td><td>Estatísticas, consolidado de feedback e auditoria</td><td>Os endpoints existem, mas não havia tela que consumisse <code>/protocolos/estatisticas</code>, <code>GET /feedbacks</code> e <code>/auditoria</code>. Após a atividade, existe tela para as análises estatísticas; feedback e auditoria continuam sem tela</td></tr>
+  <tr><td>4</td><td>O manual do chatbot cita "dados socioeconômicos por bairro"</td><td>As telas e a API trabalham por município (<code>InstrucaoIA.java</code> ficou desatualizado)</td></tr>
+</table>
+
+<h2>1.7 Linha de base dos testes</h2>
+<p>Antes de qualquer alteração, a suíte existente foi executada (<code>mvnw test</code>): <b>62 testes, 0 falhas</b> (<code>ApiIntegracaoTest</code> 25, <code>RecuperacaoSenhaTest</code> 14, <code>CalculadoraPrioridadeTest</code> 13, <code>ClassificadorNaiveBayesTest</code> 10). Esse número é o ponto de comparação: ao final, os mesmos 62 testes continuam passando. O classificador de categorias, já existente, relata acurácia leave-one-out de 86,7% sobre um conjunto sintético de 180 exemplos, valor reproduzido na execução da suíte.</p>
+
+<!-- ============================ 2. PARTE 1 ============================ -->
+<h1>2. Parte 1: Segurança da Informação</h1>
+
+<h2>2.1 Contextualização: a Tríade CIA no HackGov</h2>
+<p>O sistema trata dados de cidadãos (CPF, e-mail, cidade, descrição de solicitações, metas financeiras) e registra decisões administrativas (tramitação de protocolos). A Tríade CIA organiza as preocupações:</p>
+<ul>
+  <li><b>Confidencialidade:</b> apenas quem deve acessar um dado o acessa. No HackGov: senhas em hash, tokens de recuperação em hash, separação entre cidadão e atendente, triagem visível só ao atendente.</li>
+  <li><b>Integridade:</b> registros não podem ser alterados indevidamente nem sem rastro. No HackGov: validação no servidor, transições de status restritas ao atendente e a trilha de auditoria.</li>
+  <li><b>Disponibilidade:</b> o serviço segue funcionando diante de falhas. No HackGov: timeouts, cache com último valor conhecido para fontes públicas, limitação de requisições.</li>
+</ul>
+
+<h2>2.2 Cenário atual (antes da atividade)</h2>
+<table>
+  <tr><th style="width:23%">Mecanismo</th><th>Evidência no código</th><th style="width:13%">CIA</th></tr>
+  <tr><td>Hash BCrypt de senhas</td><td><code>WebConfig.bCryptPasswordEncoder</code> (custo 10)</td><td>C</td></tr>
+  <tr><td>Política de senha forte, validada no servidor</td><td><code>PoliticaSenha.java</code></td><td>C</td></tr>
+  <tr><td>Anti-enumeração de contas</td><td><code>AuthController.login</code>, <code>Repositorio.getHashFalso</code>, <code>RecuperacaoSenhaService.igualarTempo</code></td><td>C</td></tr>
+  <tr><td>Recuperação de senha segura (token de 256 bits, SHA-256 no banco, 15 min, uso único por UPDATE atômico)</td><td><code>RecuperacaoSenhaService</code>, <code>Repositorio.consumirTokenRecuperacao</code></td><td>C, I</td></tr>
+  <tr><td>RBAC declarativo e isolamento entre cidadãos</td><td><code>@Autenticado</code>, <code>AutenticacaoInterceptor</code>, <code>ProtocoloController.podeVer</code></td><td>C, I</td></tr>
+  <tr><td>Limitação de requisições por IP</td><td><code>LimitadorRequisicoes</code></td><td>D, C</td></tr>
+  <tr><td>Validação e sanitização de entradas</td><td><code>Validadores.java</code>, DTOs</td><td>I</td></tr>
+  <tr><td>Erros sem vazamento de detalhes internos</td><td><code>TratadorGlobalErros</code></td><td>C</td></tr>
+  <tr><td>Segredos fora do repositório</td><td><code>.env</code> no <code>.gitignore</code>; <code>.env.example</code></td><td>C</td></tr>
+  <tr><td>Trilha de auditoria e log técnico</td><td>tabela <code>auditoria</code>; <code>LogRequisicoesFiltro</code></td><td>I</td></tr>
+  <tr><td>Resiliência a falhas de fontes externas</td><td><code>CachePublico</code>, timeouts em <code>DadosPublicosService</code></td><td>D</td></tr>
+</table>
+<p>As lacunas identificadas, e que orientaram a seleção das quatro melhorias, foram: sessão sem expiração no servidor (C); chave da API de IA na URL (C); trilha de auditoria alterável sem detecção (I); ausência de procedimento de backup (D). Foram também identificadas lacunas que a atividade <b>não</b> trata e apenas recomenda (HTTPS, cabeçalhos de segurança, criptografia do banco em repouso, monitoramento), listadas em 2.5.</p>
+
+<h2>2.3 Evoluções implementadas</h2>
+
+<h3>S1. Expiração de sessão por inatividade no servidor <span class="tag im">Implementado</span></h3>
+<p><b>Problema.</b> A regra de 15 minutos de inatividade existia apenas no navegador. Um token copiado continuava válido no servidor até o logout, a troca de senha ou o reinício da API.</p>
+<p><b>Solução.</b> A sessão (<code>SessaoService.Sessao</code>) passou a guardar também o instante do último uso. Em <code>resolver()</code>, se o intervalo desde o último uso excede o limite, a sessão é removida e tratada como inexistente (o interceptor responde 401); caso contrário, o prazo é renovado. O limite vem da propriedade <code>vidareal.sessao.inatividade-minutos</code> (padrão 15). O relógio é injetável (<code>Clock</code>), o que permite testar o tempo sem esperar minutos.</p>
+<p><b>Verificação.</b> <code>SessaoServiceTest</code> (7 testes): sessão parada além do limite expira e não volta; no limite exato ainda vale; uso a cada 10 minutos mantém a sessão por 40; token vazio ou desconhecido não resolve. <code>SessaoExpiracaoHttpTest</code> (1 teste, ponta a ponta): com limite de 0 minuto, um token recém-emitido recebe 401 em <code>/auth/me</code>.</p>
+<p><b>Limites.</b> As sessões continuam em memória e se perdem no reinício da API; não há limite absoluto de duração, apenas de inatividade.</p>
+
+<h3>S2. Chave da API Gemini no cabeçalho, não na URL <span class="tag im">Implementado</span></h3>
+<p><b>Problema.</b> <code>ChatController</code> enviava a chave em <code>...:generateContent?key=...</code>. URLs aparecem em logs de servidor, proxies e históricos.</p>
+<p><b>Solução.</b> A montagem da requisição foi extraída para <code>montarChamada()</code>, e a chave passou ao cabeçalho <code>x-goog-api-key</code>; a URL ficou sem query string.</p>
+<p><b>Verificação.</b> <code>ChatControllerTest</code> (3 testes) inspeciona a requisição montada: chave presente no cabeçalho, ausente da URL, destino e método corretos. <b>A API real do Gemini não foi chamada</b> (não havia chave de teste): os testes provam como a requisição é montada, não que o provedor a aceita. A confirmação de ponta a ponta exige abrir o chat com uma chave válida configurada.</p>
+
+<h3>S3. Cadeia de hashes na trilha de auditoria <span class="tag im">Implementado</span></h3>
+<p><b>Problema.</b> A auditoria podia ser alterada ou ter linhas removidas diretamente no banco, sem qualquer indício.</p>
+<p><b>Solução.</b> Cada registro passou a guardar o hash do registro anterior (<code>hash_anterior</code>) e o seu próprio (<code>hash_registro</code>), este calculado com SHA-256 sobre todos os campos (id, ação, recurso, autor, detalhe, instante) mais o hash anterior (<code>CadeiaAuditoria.java</code>). Alterar um registro, apagar um do meio ou reordenar faz o hash recalculado deixar de coincidir. O endpoint <code>GET /api/v1/auditoria/integridade</code> (exclusivo do atendente) percorre a cadeia e devolve se está íntegra e, se não, o primeiro registro inválido e o motivo.</p>
+
+<figure>
+<svg viewBox="0 0 760 150" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif" font-size="11.5">
+  <defs><marker id="c" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1f3a68"/></marker></defs>
+  <g><rect x="8" y="20" width="220" height="100" rx="7" fill="#e8eef8" stroke="#1f3a68"/>
+    <text x="118" y="40" text-anchor="middle" font-weight="700">Registro n-1</text>
+    <text x="20" y="62">campos do registro</text><text x="20" y="80">hash_anterior: H(n-2)</text><text x="20" y="100" font-weight="700">hash_registro: H(n-1)</text></g>
+  <g><rect x="270" y="20" width="220" height="100" rx="7" fill="#e8eef8" stroke="#1f3a68"/>
+    <text x="380" y="40" text-anchor="middle" font-weight="700">Registro n</text>
+    <text x="282" y="62">campos do registro</text><text x="282" y="80" fill="#1b6b3f" font-weight="700">hash_anterior = H(n-1)</text><text x="282" y="100" font-weight="700">hash_registro: H(n)</text></g>
+  <g><rect x="532" y="20" width="220" height="100" rx="7" fill="#e8eef8" stroke="#1f3a68"/>
+    <text x="642" y="40" text-anchor="middle" font-weight="700">Registro n+1</text>
+    <text x="544" y="62">campos do registro</text><text x="544" y="80" fill="#1b6b3f" font-weight="700">hash_anterior = H(n)</text><text x="544" y="100" font-weight="700">hash_registro: H(n+1)</text></g>
+  <line x1="228" y1="70" x2="268" y2="70" stroke="#1f3a68" stroke-width="1.8" marker-end="url(#c)"/>
+  <line x1="490" y1="70" x2="530" y2="70" stroke="#1f3a68" stroke-width="1.8" marker-end="url(#c)"/>
+  <text x="380" y="142" text-anchor="middle" fill="#55555c">H(n) = SHA-256( campos do registro n + H(n-1) )</text>
+</svg>
+<figcaption><b>Figura 2.</b> Encadeamento da trilha de auditoria. Mudar qualquer campo do registro n altera H(n) e, portanto, o elo seguinte deixa de conferir.</figcaption>
+</figure>
+
+<p><b>Decisões de projeto.</b> (i) A gravação (<code>Repositorio.registrarAuditoria</code>) é <code>synchronized</code>, pois ler o último hash e gravar o novo precisa ser indivisível; do contrário, duas ações simultâneas partiriam do mesmo "anterior" e a cadeia se bifurcaria. Isso basta para uma instância da API. (ii) O instante é truncado em milissegundos antes de gravar e de calcular o hash, para o valor lido do banco ser idêntico ao gravado. (iii) O hash anterior do primeiro registro é uma sequência de 64 zeros (e não texto vazio, que o Oracle trata como nulo). (iv) Registros antigos, sem hash, são ignorados no início da trilha.</p>
+<p><b>Verificação.</b> <code>CadeiaAuditoriaTest</code> (12 testes, sobre listas em memória): cadeia íntegra; conteúdo alterado aponta exatamente o registro; remoção do meio ou do primeiro registro é detectada no registro seguinte; reordenação quebra a cadeia; <b>recalcular apenas o hash do registro adulterado não basta</b>, pois o elo seguinte o denuncia. <code>AuditoriaIntegridadeTest</code> (4 testes, com o banco): a trilha gravada pela API verifica como íntegra; um <code>UPDATE</code> direto no banco é detectado e o registro, apontado; o cidadão recebe 403 e quem não tem token, 401.</p>
+<div class="box aviso">
+  <p><b>Limite conhecido, registrado em teste</b> (<code>truncamentoDoFimNaoEDetectado</code>): apagar os registros <i>mais recentes</i> deixa o início da cadeia consistente e não é detectado. Quem controla o banco inteiro também pode recalcular todos os hashes. Além disso, a cadeia protege a <b>trilha de auditoria</b>, não as tabelas de negócio: um protocolo alterado diretamente, sem mexer na auditoria, não é detectado por este mecanismo. A defesa natural é guardar o hash mais recente fora do banco (ver Parte 4, seção 5.5).</p>
+</div>
+
+<h3>S4. Backup e restauração do banco H2 <span class="tag im">Implementado</span></h3>
+<p><b>Problema.</b> Não existia procedimento de backup ou de recuperação.</p>
+<p><b>Solução.</b> Dois scripts PowerShell em <code>backend/</code>, sobre as ferramentas do próprio H2 (<code>Script</code> e <code>RunScript</code>), sem dependência nova: <code>backup-banco.ps1</code> exporta esquema e dados para <code>backend/backups/vidareal-AAAAMMDD-HHMMSS.sql</code> e mostra o SHA-256 do arquivo; <code>restaurar-banco.ps1</code> carrega um backup em um banco novo. A restauração <b>não apaga</b> o banco atual: ele é movido para <code>data/antes-da-restauracao-.../</code> e devolvido ao lugar se a carga falhar. Ambos recusam rodar com a API no ar (o H2 em arquivo aceita um processo por vez). A pasta de backups foi incluída no <code>.gitignore</code>, pois contém dados de cidadãos.</p>
+<p><b>Verificação.</b> Teste de ponta a ponta em banco temporário, em caminho com acento e espaço: com a API real, criou-se um protocolo, fez-se o backup, criou-se outro protocolo e restaurou-se. O número de protocolos foi <b>5 (no backup), 6 (após a mudança) e 5 (após restaurar)</b>, e <code>/auditoria/integridade</code> retornou <code>integra: true</code> no banco restaurado. O backup com a API no ar foi recusado (código de saída 1) e a restauração de arquivo inexistente também (banco intacto). O arquivo de backup tem 0 bytes não-ASCII (o H2 grava os acentos como escapes), logo não depende de codificação.</p>
+<div class="box aviso">
+  <p><b>Achado.</b> Na primeira rodada, o banco restaurado trouxe menos dados do que o observado antes do backup (4 protocolos contra 5). A causa provável, confirmada pelo comportamento (com 4 segundos de espera antes de parar a API os números passaram a coincidir), é que a parada forçada do processo (o mesmo tipo de parada de <code>stop.ps1</code>) perde as gravações dos últimos instantes, ainda não descarregadas pelo H2 para o disco. Não houve instrumentação direta. O README recomenda aguardar alguns segundos antes de parar a API e fazer o backup. O <code>stop.ps1</code> não foi alterado.</p>
+</div>
+<p><b>Limites.</b> O backup é manual, fica na mesma máquina do banco e contém dados em texto. Os scripts foram testados apenas no Windows PowerShell 5.1.</p>
+
+<h2>2.4 Cenário de incidente simulado: adulteração de registro e da trilha</h2>
+<p><b>Cenário.</b> Uma pessoa com acesso ao arquivo do banco (por exemplo, pelo console H2 ou por cópia do arquivo) altera o texto de um registro de auditoria, para ocultar quem mudou o status de um protocolo.</p>
+<table>
+  <tr><th style="width:20%">Fase</th><th>O que acontece no HackGov</th><th style="width:15%">Situação</th></tr>
+  <tr><td>Prevenção</td><td>O arquivo do banco não sai da máquina e o console H2 escuta só em <code>localhost</code> (<code>webAllowOthers=false</code> em <code>start.ps1</code>); os dados de auditoria não têm rota de escrita na API.</td><td><span class="tag ex">Existente</span></td></tr>
+  <tr><td>Detecção</td><td>O atendente consulta <code>/api/v1/auditoria/integridade</code>. A resposta traz <code>integra: false</code>, o identificador do primeiro registro inválido e o motivo ("o conteúdo do registro foi alterado depois de gravado").</td><td><span class="tag im">Implementado</span></td></tr>
+  <tr><td>Contenção e evidência</td><td>Preservar uma cópia do arquivo do banco no estado atual antes de qualquer correção.</td><td><span class="tag fu">Procedimento</span></td></tr>
+  <tr><td>Recuperação</td><td>Restaurar o último backup íntegro em um banco novo (<code>restaurar-banco.ps1</code>); o banco comprometido é guardado, não apagado. Verificar a integridade do restaurado e comparar com o banco guardado para recuperar o que foi gravado depois do backup.</td><td><span class="tag im">Implementado</span></td></tr>
+  <tr><td>Alerta automático e âncora externa</td><td>Hoje a verificação é manual. Um alerta periódico para <code>integra: false</code> e a guarda do hash mais recente fora do banco fechariam as lacunas do quadro acima.</td><td><span class="tag fu">Futuro</span></td></tr>
+</table>
+<p><b>Demonstração reproduzível.</b> O teste <code>AuditoriaIntegridadeTest.adulteracaoNoBancoEDetectada</code> executa exatamente o cenário (um <code>UPDATE</code> direto no banco, seguido da verificação e da conferência de que o registro apontado é o alterado). Para mostrar ao vivo: abrir o endpoint como atendente (<code>integra: true</code>), alterar um <code>detalhe</code> no console H2 (<code>.\start.ps1 -ConsoleBanco</code>) e consultar de novo.</p>
+<p><b>Cenário complementar: reutilização de um token roubado.</b> Com a S1, um token abandonado ou copiado deixa de valer após 15 minutos sem uso (antes, valia indefinidamente). A limitação de tentativas de login por IP (existente) trata a força bruta.</p>
+
+<h2>2.5 Políticas técnicas: situação e recomendações</h2>
+<table>
+  <tr><th style="width:17%">Tema</th><th style="width:26%">Situação inicial</th><th style="width:25%">Implementado</th><th>Recomendação futura <span class="tag fu">Futuro</span></th></tr>
+  <tr><td>Autenticação e autorização</td><td>BCrypt, RBAC por anotação, 401/403/404</td><td>Expiração no servidor (S1)</td><td>Login via gov.br (OAuth 2.0), já previsto no README; segundo fator; limite absoluto de sessão; sessões fora da memória</td></tr>
+  <tr><td>Controle de acesso e privilégios</td><td>Dois perfis; atendente vê todos os protocolos e pode excluí-los</td><td>Nenhuma alteração (regra de negócio mantida)</td><td>Perfil de auditor somente leitura; revisar a exclusão física de protocolos</td></tr>
+  <tr><td>Criptografia em trânsito</td><td>HTTPS nas chamadas externas; SMTP com STARTTLS; API local em HTTP</td><td>Chave do Gemini fora da URL (S2)</td><td>TLS na API ou em proxy reverso, HSTS, cabeçalhos de segurança (CSP)</td></tr>
+  <tr><td>Criptografia em repouso</td><td>Hash de senhas e tokens; demais dados em texto no arquivo H2</td><td>Nenhuma</td><td>Cifra de arquivo do H2 ou banco gerenciado cifrado; backups cifrados</td></tr>
+  <tr><td>Segredos e credenciais</td><td><code>.env</code> fora do git</td><td>Chave fora da URL (S2)</td><td>Cofre de segredos e rotação periódica das chaves</td></tr>
+  <tr><td>Backup e recuperação</td><td>Inexistente</td><td>Scripts de backup e restauração testados (S4)</td><td>Rotina automática, cópia em outro local, cifrada, com teste periódico de restauração</td></tr>
+  <tr><td>Logs e auditoria</td><td>Log técnico e trilha mutável</td><td>Cadeia de hashes e verificação (S3)</td><td>Tela de auditoria; identificador de correlação e IP do autor no registro; âncora externa do hash atual</td></tr>
+  <tr><td>Monitoramento e incidentes</td><td><code>/health</code> devolve "ok" fixo, sem checar o banco; <code>LOGIN_FALHOU</code> é gravado, mas não analisado</td><td>Nenhuma</td><td>Verificação de saúde que consulte o banco; alertas para falhas de login em série e para <code>integra: false</code></td></tr>
+</table>
+
+<!-- ============================ 3. PARTE 2 ============================ -->
+<h1>3. Parte 2: Redes de Comunicação</h1>
+<div class="box">
+  <p><b>Escopo.</b> Conforme a decisão do projeto, esta parte é uma <b>análise da arquitetura existente</b>. <b>Nenhuma infraestrutura de rede foi construída ou alterada.</b> As recomendações de produção estão marcadas como <span class="tag fu">Futuro</span>.</p>
+</div>
+
+<h2>3.1 Mapa das comunicações</h2>
+<table>
+  <tr><th style="width:15%">Enlace</th><th style="width:17%">Protocolo</th><th>Proteção existente</th><th style="width:25%">Lacuna</th></tr>
+  <tr><td>Navegador → API</td><td>HTTP, JSON, token <code>Bearer</code> no cabeçalho (<code>apiClient.js</code>)</td><td>CORS restrito às origens <code>localhost:5173</code> e <code>127.0.0.1:5173</code> (<code>WebConfig</code>); timeout de 30 s no cliente; 401 derruba a sessão local</td><td>Sem TLS: token e CPF trafegam em claro fora de <code>localhost</code>. Sem cabeçalhos de segurança</td></tr>
+  <tr><td>API → banco</td><td>JDBC dentro do mesmo processo (H2 em arquivo)</td><td>Não há porta de rede aberta para o banco. Com <code>start.ps1 -ConsoleBanco</code>, o console web escuta somente em <code>localhost:8082</code></td><td>Trocar para um banco em servidor (a URL é configurável) exigiria proteger esse enlace</td></tr>
+  <tr><td>API → dados públicos (BCB, IBGE, BrasilAPI, ViaCEP, OSM)</td><td>HTTPS</td><td>Timeouts (15 s; conexão 8 s); cache com validade por tipo (6 h a 7 dias); último valor conhecido em caso de falha; erro padronizado <code>503 FONTE_INDISPONIVEL</code></td><td>Sem lista de destinos permitidos na saída</td></tr>
+  <tr><td>API → Gemini</td><td>HTTPS</td><td>Timeout de 20 s; tratamento do 429; limite de 20 mensagens por minuto por IP; chave em cabeçalho (S2)</td><td>Chave em memória; sem cofre</td></tr>
+  <tr><td>API → SMTP</td><td>SMTP com STARTTLS obrigatório por padrão</td><td>Timeouts de 10 s; envio em fila própria, fora da requisição (também evita revelar quais CPFs têm conta pelo tempo de resposta)</td><td>Falha de entrega só aparece no log</td></tr>
+  <tr><td>Navegador → provedores de mapa e VLibras</td><td>HTTPS</td><td>Camadas de mapa (CARTO, OpenStreetMap, OpenTopoMap, Esri), fontes do Google e o plugin do VLibras são buscados diretamente pelo navegador, conforme o código do frontend</td><td>Dependência de terceiros no cliente, sem política de conteúdo (CSP)</td></tr>
+</table>
+<p><b>Outros pontos observados no código.</b> A limitação de requisições usa <code>getRemoteAddr()</code>: atrás de um proxy reverso, todos os clientes apareceriam com o mesmo IP, e o limite passaria a valer para o grupo inteiro. O envio de avaliações (<code>POST /feedbacks</code>) é público e não tem limite de taxa. A propriedade <code>server.tomcat.max-http-form-post-size</code>, comentada como limite do corpo da requisição, refere-se a formulários; <b>não foi verificado</b> se ela limita corpos JSON.</p>
+
+<h2>3.2 Relação com a Tríade CIA</h2>
+<table>
+  <tr><th style="width:15%">Pilar</th><th>Como a rede se relaciona com o pilar no HackGov</th><th style="width:19%">Situação</th></tr>
+  <tr><td><b>Confidencialidade</b></td><td>Em HTTP, qualquer ponto do caminho lê o token e o CPF. O TLS protege o conteúdo em trânsito. O CORS limita quais páginas web conseguem ler as respostas, mas <b>não</b> é barreira contra clientes que não são navegadores. O banco no mesmo processo evita expor uma porta de dados. A chave da IA no cabeçalho (S2) evita que ela apareça em logs de URL.</td><td><span class="tag pa">Parcial</span> (chave fora da URL <span class="tag im">S2</span>; TLS <span class="tag fu">Futuro</span>)</td></tr>
+  <tr><td><b>Integridade</b></td><td>O TLS também impede a alteração do tráfego no caminho; o HSTS impede o rebaixamento para HTTP. No servidor, a validação não confia no cliente (o servidor refaz a triagem na criação do protocolo). A cadeia de hashes (S3) estende a garantia de integridade ao registro dos eventos.</td><td><span class="tag pa">Parcial</span> (<span class="tag im">S3</span>; TLS/HSTS <span class="tag fu">Futuro</span>)</td></tr>
+  <tr><td><b>Disponibilidade</b></td><td>Timeouts impedem que uma fonte lenta prenda a API; o cache devolve o último valor quando a fonte cai; a fila de e-mail isola a falha do SMTP; o limite de taxa mitiga abuso. Restrições: instância única, limitador e sessões em memória (perdidos no reinício) e limitador por IP sensível a proxy.</td><td><span class="tag ex">Existente</span> (com limites)</td></tr>
+</table>
+
+<h2>3.3 Resiliência diante de falhas de comunicação</h2>
+<p>O desenho trata a queda de cada dependência de modo diferente. <b>Fontes públicas</b>: <code>CachePublico</code> devolve o último valor bom e registra um aviso; sem cópia alguma, a API responde 503 padronizado, e a tela continua útil sem aquele indicador. <b>Assistente virtual</b>: indisponibilidade da chave, cota esgotada (429) e tempo limite têm mensagens próprias; o restante do sistema não é afetado. <b>E-mail</b>: sem SMTP configurado, a rota responde 503 antes de olhar o CPF (resposta igual para todos); com SMTP lento, a requisição não espera. O cliente HTTP do frontend aborta chamadas após 30 s e distingue "sem conexão" de "tempo esgotado". A principal fragilidade é a <b>instância única</b>: se a API cair, o serviço cai, e as sessões se perdem.</p>
+
+<h2>3.4 Topologia recomendada para produção <span class="tag fu">Futuro</span></h2>
+<ul>
+  <li><b>Proxy reverso com terminação TLS</b> (HTTPS e HSTS), servindo o SPA e a API na mesma origem, o que elimina a necessidade de CORS e permite cabeçalhos de segurança (CSP, <code>nosniff</code>).</li>
+  <li><b>Segmentação:</b> proxy em zona pública; API em segmento interno; banco em segmento de dados, acessível apenas pela API, se for migrado para servidor (Oracle ou PostgreSQL, previsto pela configuração <code>VIDAREAL_DB_URL</code>).</li>
+  <li><b>Saída restrita</b> da API a uma lista de domínios (BCB, IBGE, Gemini, SMTP).</li>
+  <li><b>IP real do cliente</b> com cabeçalho de proxy confiável para o limitador de taxa, e limitador compartilhado (por exemplo, em Redis) se houver mais de uma instância.</li>
+  <li><b>Monitoramento do tráfego:</b> métricas de taxa de erro e latência por rota, e alerta para picos de 401 e 429 (sinal de força bruta).</li>
+</ul>
+
+<!-- ============================ 4. PARTE 3 ============================ -->
+<h1>4. Parte 3: Estatística Aplicada e Tomada de Decisão</h1>
+
+<h2>4.1 Dados disponíveis e adequação</h2>
+<p>O banco de demonstração nasce com 4 protocolos (2 concluídos), insuficiente para qualquer análise. Para demonstrar a metodologia foi usado o conjunto de exemplo de <code>backend/sql/dados-exemplo.sql</code>: <b>13 cidadãos, 84 protocolos (68 concluídos), 41 avaliações e 15 metas, todos fictícios</b>, de abril a outubro de 2026. Com os 4 protocolos de demonstração, o painel analisa 88 protocolos, dos quais 70 estão concluídos e triados. Os dados de exemplo podem ser carregados e removidos com <code>backend/carregar-dados-exemplo.ps1</code> (Apêndice A).</p>
+<table>
+  <tr><th style="width:26%">Aspecto</th><th>Avaliação</th></tr>
+  <tr><td>Volume</td><td>Suficiente apenas para demonstrar o método: 70 pares para o Spearman e 30 semanas para a regressão. Com dados reais, o resultado dependerá do volume efetivo da prefeitura.</td></tr>
+  <tr><td>Estrutura</td><td>Campos necessários presentes: pontos de prioridade, datas de abertura e conclusão. A prioridade é ordinal, com poucos níveis (muitos empates).</td></tr>
+  <tr><td>Qualidade</td><td>Dados sintéticos: o relacionamento entre prioridade e tempo foi definido por quem escreveu o exemplo. <b>Os resultados não são evidência sobre o atendimento real.</b></td></tr>
+  <tr><td>Restrição estrutural</td><td>O feedback é anônimo por decisão do projeto (sem vínculo com protocolo), então satisfação e tempo de atendimento só poderiam ser relacionados em agregado mensal (cerca de 6 pontos): inadequado para regressão. Por isso não foi analisado.</td></tr>
+</table>
+
+<h2>4.2 As duas análises</h2>
+<table>
+  <tr><th style="width:15%"></th><th>(a) Prioridade × tempo de resolução</th><th>(b) Tendência do volume de protocolos</th></tr>
+  <tr><td><b>Variáveis</b></td><td>Pontos de prioridade da triagem (0 a 7) e dias entre abertura e conclusão, para protocolos concluídos e triados</td><td>Número da semana (eixo x) e protocolos abertos na semana (eixo y)</td></tr>
+  <tr><td><b>Justificativa</b></td><td>A triagem existe para ordenar a fila. Se prioridade alta não é atendida mais rápido, a fila priorizada não está sendo seguida ou os pesos precisam de revisão.</td><td>Mostra se a demanda sobe ou cai e quão estável é, informação para dimensionar o atendimento.</td></tr>
+  <tr><td><b>Método</b></td><td>Correlação de Spearman: robusta a valores extremos e adequada a variável ordinal com empates, pois não supõe relação em linha reta</td><td>Regressão linear simples por mínimos quadrados, com R² como medida de ajuste</td></tr>
+  <tr><td><b>Decisão apoiada</b></td><td>Revisar pesos da triagem e a disciplina de uso da fila priorizada</td><td>Planejar a quantidade de atendentes nas semanas seguintes (com cautela, ver 4.6)</td></tr>
+</table>
+<p style="break-after: avoid"><b>Fórmulas.</b> O coeficiente de Spearman é o de Pearson aplicado aos <i>postos</i> (<i>ranks</i>) das duas variáveis, com a média dos postos nos empates:</p>
+<p style="text-align:center">&rho; = &Sigma;(R<sub>x,i</sub> &minus; R&#772;<sub>x</sub>)(R<sub>y,i</sub> &minus; R&#772;<sub>y</sub>) &divide; &radic;[ &Sigma;(R<sub>x,i</sub> &minus; R&#772;<sub>x</sub>)<sup>2</sup> &middot; &Sigma;(R<sub>y,i</sub> &minus; R&#772;<sub>y</sub>)<sup>2</sup> ]</p>
+<p>Na regressão <i>y</i> = <i>a</i> + <i>b</i>x, a inclinação é <i>b</i> = S<sub>xy</sub> &divide; S<sub>xx</sub>, o intercepto é <i>a</i> = y&#772; &minus; <i>b</i>&middot;x&#772; e o R<sup>2</sup> é <i>b</i><sup>2</sup>&middot;S<sub>xx</sub> &divide; S<sub>yy</sub> (a parcela da variação de <i>y</i> explicada pela reta), em que S<sub>xy</sub>, S<sub>xx</sub> e S<sub>yy</sub> são as somas dos produtos e dos quadrados dos desvios em relação às médias.</p>
+
+<h2>4.3 Implementação</h2>
+<ul>
+  <li><b>Cálculo no backend, em Java puro</b> (pacote <code>analise</code>), sem Python e sem dependência nova: <code>AnaliseEstatistica</code> (as fórmulas) e <code>AnaliseProtocolos</code> (monta a resposta). Este segundo é uma função pura sobre a lista de protocolos, o que a torna testável.</li>
+  <li><b>Endpoint</b> <code>GET /api/v1/protocolos/analises</code>, exclusivo do atendente (403 para o cidadão, 401 sem token).</li>
+  <li><b>Regras de honestidade:</b> mínimo de 10 pares para o Spearman e de 4 semanas completas para a regressão; abaixo disso a resposta traz <code>disponivel: false</code> e o motivo, em vez de um número. As semanas sem protocolo contam como zero. A <b>primeira e a última semana são descartadas</b>, porque a série começa e termina no meio delas e puxaria a reta para baixo.</li>
+  <li><b>Aviso de dados fictícios:</b> a resposta informa quantos protocolos analisados têm identificador <code>EX-</code>, e a interface exibe a faixa "Dados fictícios de demonstração" quando houver algum.</li>
+  <li><b>Visualização</b> (componente <code>AnalisesProtocolos.jsx</code>, no Dashboard do atendente, com Recharts, biblioteca já existente no projeto): cartão com o &rho; e uma escala de &minus;1 a +1; colunas do volume semanal com a reta de tendência, legenda, dica ao passar o mouse e tabela com os mesmos dados.</li>
+</ul>
+<figure>
+  <img src="img/analises-dashboard.png" alt="Painel de análises dos protocolos no Dashboard do atendente">
+  <figcaption><b>Figura 3.</b> Seção "Análises dos protocolos" no Dashboard do atendente, com a faixa de dados fictícios, o cartão do coeficiente de Spearman e o gráfico semanal com a reta de tendência (captura real do sistema, tema claro).</figcaption>
+</figure>
+<p>As cores do gráfico (colunas no tom forte da marca e a tendência em tinta neutra) foram validadas com o script de validação de paletas do projeto de visualização de dados: o contraste em relação à superfície é de pelo menos 3:1 nos temas claro e escuro, e a separação entre as duas cores é ampla para quem tem daltonismo (&Delta;E de 34,7 a 42,9 no tema claro). O mesmo validador acusou falha nos critérios de luminosidade e croma para a linha cinza; como o próprio script informa que seu escopo são paletas categóricas, e o cinza neutro é intencional (destaque com cor mais cinza de apoio), esse resultado foi tratado como esperado.</p>
+
+<h2>4.4 Validação</h2>
+<p><b>Testes com valores calculados à mão</b> (<code>AnaliseEstatisticaTest</code>, 12 testes), com a conta no comentário de cada teste: relação perfeita (&plusmn;1); relação monotônica não linear (&rho; = 1); exemplo clássico de livro-texto com &rho; = &minus;29/165 (soma dos d<sup>2</sup> = 194); caso com empates, &rho; = 3/&radic;10; reta exata <i>y</i> = 2<i>x</i> + 1 (inclinação 2, intercepto 1, R<sup>2</sup> = 1); caso com ruído (<i>x</i> = 1..5, <i>y</i> = 2, 4, 5, 4, 5), com inclinação 0,6, intercepto 2,2 e R<sup>2</sup> = 0,6; <i>y</i> constante (R<sup>2</sup> indefinido); entradas inválidas. <code>AnaliseProtocolosTest</code> (13 testes) cobre a montagem (amostra insuficiente, semanas vazias, descarte das bordas, aviso de dados fictícios), e <code>AnalisesEndpointTest</code> (3 testes), o acesso e o formato da resposta.</p>
+<p><b>Conferência independente.</b> Com os dados de exemplo carregados em um banco temporário, a resposta real da API foi comparada com outra implementação (PowerShell), que lê os dados diretamente do banco por SQL:</p>
+<table>
+  <tr><th>Métrica</th><th class="num">API (Java)</th><th class="num">Cálculo independente</th></tr>
+  <tr><td>Spearman: amostra (n)</td><td class="num">70</td><td class="num">70</td></tr>
+  <tr><td>Spearman: &rho;</td><td class="num">&minus;0,447</td><td class="num">&minus;0,446915</td></tr>
+  <tr><td>Regressão: semanas</td><td class="num">30</td><td class="num">30</td></tr>
+  <tr><td>Inclinação</td><td class="num">0,118</td><td class="num">0,117686</td></tr>
+  <tr><td>Intercepto</td><td class="num">1,127</td><td class="num">1,126882</td></tr>
+  <tr><td>R<sup>2</sup></td><td class="num">0,236</td><td class="num">0,235521</td></tr>
+  <tr><td>Série semanal (30 valores)</td><td class="num" colspan="2">idêntica nas duas implementações</td></tr>
+</table>
+<p>Na primeira comparação, o Spearman divergiu (n = 70 contra 67). A hipótese era que três protocolos fictícios sem triagem recebem a triagem quando a API sobe (comportamento já existente em <code>TriagemService</code>), e que os dados haviam sido exportados antes disso. Refazendo a exportação depois de subir a API, os valores passaram a coincidir. A divergência era da ordem da verificação, não do código.</p>
+
+<h2>4.5 Resultados (dados fictícios) e interpretação</h2>
+<table>
+  <tr><th style="width:22%">Análise</th><th style="width:20%">Resultado</th><th>Interpretação e uso na decisão</th></tr>
+  <tr><td>Prioridade × tempo (Spearman)</td><td>&rho; = &minus;0,447 (correlação negativa moderada), n = 70</td><td>Nesse conjunto, protocolos de prioridade mais alta tendem a ser concluídos em menos tempo, o que é compatível com a fila priorizada sendo seguida, mas não prova isso. Com dados reais, um &rho; perto de zero ou positivo sugeriria revisar os pesos da triagem ou a forma de uso da fila.</td></tr>
+  <tr><td>Tendência de volume (regressão)</td><td>+0,118 protocolo por semana; intercepto 1,127; R<sup>2</sup> = 0,236; 30 semanas</td><td>O volume semanal sobe cerca de 0,12 protocolo por semana, mas a reta explica só 24% da variação, de modo que a tendência deve ser usada com cautela no dimensionamento da equipe.</td></tr>
+</table>
+<div class="box aviso"><p>Estes números descrevem o <b>conjunto de exemplo</b>. Como a relação entre prioridade e tempo foi definida por quem escreveu os dados, o &rho; não informa como o atendimento real funciona. A interface avisa isso ao usuário.</p></div>
+
+<h2>4.6 Limitações</h2>
+<ul>
+  <li><b>Sem p-valor nem intervalo de confiança</b> nesta versão (decisão de escopo): os resultados são estimativas, e os textos exibidos na interface dizem isso. Com amostra pequena, um &rho; moderado pode ser acaso.</li>
+  <li><b>Muitos empates na prioridade</b> (poucos níveis): o tratamento pela média dos postos é correto, mas reduz a precisão do coeficiente.</li>
+  <li><b>A regressão supõe tendência linear</b> e não captura sazonalidade; projetar além da série é extrapolação.</li>
+  <li>A triagem é aplicada aos protocolos sem triagem a cada subida da API (comportamento já existente), de modo que o resultado pode mudar entre subidas se houver protocolos sem pontos.</li>
+</ul>
+
+<!-- ============================ 5. PARTE 4 ============================ -->
+<h1>5. Parte 4: Blockchain e Smart Contracts</h1>
+<div class="box">
+  <p><b>Escopo.</b> Protótipo em <code>blockchain/</code>, <b>testado e implantado em rede local</b> (Hardhat). <b>Não há integração entre a API Java e a blockchain</b> (sem web3j, sem rede permissionada, sem árvore de Merkle). A integração aparece apenas como possibilidade futura. Não se trata de uma funcionalidade pronta para produção.</p>
+</div>
+
+<h2>5.1 Caso de uso</h2>
+<p><b>Registro de integridade do ciclo de vida dos protocolos.</b> Cada mudança de etapa (Criada, Em análise, Concluído) gera um evento cujo hash é registrado em ordem em um contrato. Depois, o cidadão, a prefeitura ou um órgão de controle podem verificar, de forma independente do banco da prefeitura, que o estado de um protocolo não foi alterado desde o registro e <i>quando</i> o registro foi feito. O caso é coerente com o objetivo do HackGov (transparência e confiança) e complementa a cadeia de hashes da auditoria (S3): enquanto esta detecta alterações da trilha, a blockchain fornece uma âncora fora do controle do banco.</p>
+
+<h2>5.2 Dados na blockchain ou apenas hashes?</h2>
+<table>
+  <tr><th style="width:24%">Critério</th><th>Dados na cadeia</th><th>Apenas hashes (escolhido)</th></tr>
+  <tr><td>Dados pessoais e LGPD</td><td>O protocolo é ligado ao CPF e tem texto livre; dados pessoais gravados em uma cadeia não podem ser apagados, o que conflita com o direito de eliminação (LGPD, art. 18)</td><td>Nenhum dado pessoal sai do banco; só valores de 32 bytes</td></tr>
+  <tr><td>Exclusão (<code>DELETE</code> existe no sistema)</td><td>Incompatível com registro imutável</td><td>O dado é apagado no banco; o hash permanece sem revelar o conteúdo</td></tr>
+  <tr><td>Custo e tamanho</td><td>Alto, cresce com o texto</td><td>Constante (2 slots por evento)</td></tr>
+  <tr><td>Fonte da verdade</td><td>Duplicada</td><td>O banco relacional continua sendo a fonte; a cadeia só comprova</td></tr>
+</table>
+<p>Dois cuidados com o cálculo dos hashes: o <b>identificador do protocolo</b> é um HMAC-SHA256 do número, com uma chave que não sai da API (o número tem pouca aleatoriedade, e um SHA-256 simples seria recalculável por força bruta); e o <b>hash do estado</b> é um SHA-256 de uma representação canônica (número, tipo, etapa e datas), sem CPF, nome nem descrição.</p>
+
+<h2>5.3 O contrato <code>RegistroProtocolos.sol</code></h2>
+<p>Dois papéis: o <b>dono</b> (quem implanta) só troca o registrador; o <b>registrador</b> (conta de serviço, no futuro a API) é o único que registra. Leitura e verificação são públicas.</p>
+<table>
+  <tr><th style="width:36%">Função</th><th style="width:14%">Quem</th><th>O que faz</th></tr>
+  <tr><td><code>registrar(idProtocoloHash, etapa, hashEstado)</code></td><td>registrador</td><td>Acrescenta um evento ao histórico do protocolo e devolve o índice</td></tr>
+  <tr><td><code>transferirRegistrador(novo)</code></td><td>dono</td><td>Troca a conta autorizada a registrar</td></tr>
+  <tr><td><code>quantidadeEventos</code>, <code>obterEvento</code>, <code>ultimoEvento</code></td><td>qualquer um</td><td>Leitura do histórico</td></tr>
+  <tr><td><code>verificar(id, índice, etapa, hashEstado)</code></td><td>qualquer um</td><td>Devolve verdadeiro só se o evento existe e confere exatamente; nunca reverte</td></tr>
+</table>
+<p><b>Eventos:</b> <code>EventoRegistrado</code> (protocolo, índice, etapa, hash, registrador, data do bloco) e <code>RegistradorAlterado</code>. <b>Erros personalizados:</b> <code>NaoAutorizado</code>, <code>EtapaInvalida</code> (fora de 1 a 3), <code>HashInvalido</code> (zero), <code>EnderecoInvalido</code>, <code>EventoDuplicado</code>, <code>EventoInexistente</code>.</p>
+<p><b>Regras de negócio.</b> (i) Os eventos ficam em <b>sequência, sem proibir retrocesso</b> de etapa: o sistema permite reabrir um protocolo concluído, e a reabertura fica visível no histórico. Assim o contrato não duplica a regra de negócio do backend. (ii) O mesmo evento duas vezes seguidas (mesma etapa e mesmo hash) é recusado como proteção contra reenvio acidental; a mesma etapa com estado diferente (edição) é aceita. (iii) Não existe função para alterar ou apagar um evento.</p>
+
+<h2>5.4 Testes, implantação e demonstração</h2>
+<p><b>Testes</b> (Hardhat, Mocha e Chai; <code>blockchain/test/RegistroProtocolos.test.js</code>): <b>22 testes, todos aprovados</b>. Cobrem implantação, registro e emissão do evento, controle de acesso (o dono e contas quaisquer não registram), etapas e hashes inválidos, duplicidade, histórico em ordem incluindo a reabertura, independência entre protocolos, verificação positiva e negativa, troca do registrador e uma simulação de como a API calcularia os hashes e detectaria uma alteração posterior no banco. Um teste confirma que a lista de funções do contrato não contém nenhuma que altere ou apague eventos.</p>
+<p><b>Verificação dos testes por mutação (manual).</b> O contrato foi quebrado de propósito de 5 formas: sem controle de acesso no <code>registrar</code>; sem a checagem de duplicado; <code>verificar</code> ignorando o hash; aceitando etapa inválida; <code>transferirRegistrador</code> sem restrição ao dono. <b>Cada mutação fez ao menos um teste falhar</b>, e o contrato original foi restaurado (22 aprovados). A primeira tentativa dessa verificação não produziu números (falha na leitura dos resultados) e foi refeita; só os resultados da segunda são citados.</p>
+<p><b>Implantação em rede local</b> (<code>npm run node</code>, <code>npm run deploy</code> e <code>npm run demo</code>). A demonstração usa um protocolo fictício e registra os três eventos do ciclo de vida. Abaixo, um trecho da saída (os passos 2, de leitura do histórico, e 5, de contagem dos eventos emitidos, foram omitidos por brevidade):</p>
+<pre><code>$ npm run deploy
+Rede ............ localhost
+Contrato ........ 0x5FbDB2315678afecb367f032d93F642f64180aa3
+Dono ............ 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+Registrador ..... 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+
+$ npm run demo
+Protocolo fictício DEMO-1793417158874
+  identificador na cadeia: 0xfe7abe0f…f4d038  (HMAC do número; o número não aparece)
+
+1) Registrando os eventos (cada um vira uma transação):
+   Criada      hash do estado 0x4daead96…a50674  bloco 2
+   Em análise  hash do estado 0x9f1cbaf7…7ae50e  bloco 3
+   Concluído   hash do estado 0xb5abba49…492cd5  bloco 4
+3) Verificação de integridade (o hash do banco confere com o registrado?):
+   evento [0] com o estado original ........ CONFERE
+   evento [1] com o estado original ........ CONFERE
+   evento [2] com o estado original ........ CONFERE
+   evento [2] com a data de conclusão alterada ... NÃO CONFERE (alteração detectada)
+4) Controle de acesso: uma conta que não é o registrador tenta registrar:
+   recusado pelo contrato: NaoAutorizado</code></pre>
+<p>O motivo da recusa é decodificado do erro devolvido pelo contrato. Em uma versão anterior do script, essa linha vinha de um texto fixo de reserva; a recusa era real, mas o motivo exibido não era a evidência. O script foi corrigido.</p>
+<p><b>Dependências</b> (somente em <code>blockchain/</code>, versões fixas): <code>hardhat</code> 2.29.1, <code>@nomicfoundation/hardhat-ethers</code> 3.1.3, <code>@nomicfoundation/hardhat-chai-matchers</code> 2.1.2, <code>ethers</code> 6.17.0 e <code>chai</code> 4.5.0. Optou-se pela série 2 do Hardhat (a mais documentada) e por cinco pacotes em vez do <code>hardhat-toolbox</code>, que traria cerca de quinze a mais sem uso. O compilador Solidity (0.8.28) é baixado na primeira compilação.</p>
+
+<h2>5.5 Integração futura com a API <span class="tag fu">Futuro</span></h2>
+<p>Possibilidade, <b>não implementada</b>: a API Java, ao gravar uma mudança de etapa, calcularia o identificador e o hash do estado e os enviaria ao contrato por uma conta de serviço, de forma assíncrona (por exemplo, uma tabela de pendências processada em segundo plano), para que uma blockchain fora do ar nunca impeça o atendimento. Um endpoint de verificação recalcularia o hash do estado atual no banco e chamaria <code>verificar</code>. O hash mais recente da cadeia de auditoria (S3) também poderia ser ancorado no contrato, o que fecha a limitação de que apagar os registros mais recentes da auditoria não é detectado. Para uso real, a rede deveria ser permissionada (por exemplo, entre a prefeitura e um órgão de controle).</p>
+
+<h2>5.6 Limitações</h2>
+<ul>
+  <li><b>Rede local, sem valor real.</b> As contas são as de teste do Hardhat, cujas chaves são públicas: nunca devem ser usadas em uma rede real.</li>
+  <li><b>Confiança centralizada:</b> dono e registrador são contas únicas. A cadeia garante que o registro não muda, mas não que o registrador registrou tudo (ele pode omitir um evento).</li>
+  <li>Só detecta alteração do que <b>foi registrado</b>: um protocolo alterado antes do registro, ou nunca registrado, não é pego.</li>
+  <li>A verificação depende de a API calcular o hash do estado sempre da mesma forma (mesma ordem de campos e formato de data), o que ainda não existe.</li>
+  <li>Sem teste de carga nem estimativa de custo de gás para uma rede real.</li>
+</ul>
+
+<!-- ============================ 6. RESULTADOS ============================ -->
+<h1>6. Resultados consolidados dos testes</h1>
+<p>Todos os números abaixo vêm da execução final, feita imediatamente antes da redação deste documento.</p>
+<table>
+  <caption>Backend (<code>mvnw test</code>): 117 testes, 0 falhas, 0 erros, 0 ignorados, BUILD SUCCESS</caption>
+  <tr><th>Classe</th><th class="num">Testes</th><th>Origem</th></tr>
+  <tr><td><code>ApiIntegracaoTest</code></td><td class="num">25</td><td><span class="tag ex">Existente</span></td></tr>
+  <tr><td><code>RecuperacaoSenhaTest</code></td><td class="num">14</td><td><span class="tag ex">Existente</span></td></tr>
+  <tr><td><code>CalculadoraPrioridadeTest</code></td><td class="num">13</td><td><span class="tag ex">Existente</span></td></tr>
+  <tr><td><code>ClassificadorNaiveBayesTest</code></td><td class="num">10</td><td><span class="tag ex">Existente</span></td></tr>
+  <tr><td><code>SessaoServiceTest</code> e <code>SessaoExpiracaoHttpTest</code></td><td class="num">7 + 1</td><td><span class="tag im">S1</span></td></tr>
+  <tr><td><code>ChatControllerTest</code></td><td class="num">3</td><td><span class="tag im">S2</span></td></tr>
+  <tr><td><code>CadeiaAuditoriaTest</code> e <code>AuditoriaIntegridadeTest</code></td><td class="num">12 + 4</td><td><span class="tag im">S3</span></td></tr>
+  <tr><td><code>AnaliseEstatisticaTest</code>, <code>AnaliseProtocolosTest</code> e <code>AnalisesEndpointTest</code></td><td class="num">12 + 13 + 3</td><td><span class="tag im">E1</span></td></tr>
+  <tr><td><b>Total</b></td><td class="num"><b>117</b></td><td>62 existentes + 55 novos</td></tr>
+</table>
+<table>
+  <caption>Demais verificações</caption>
+  <tr><th style="width:27%">Item</th><th style="width:20%">Resultado</th><th>Observação</th></tr>
+  <tr><td>Contrato (<code>hardhat test</code>)</td><td>22 aprovados</td><td>Mais 5 mutações manuais, todas detectadas</td></tr>
+  <tr><td>Frontend: lint e build</td><td>Sem erros; build concluído</td><td>O aviso de tamanho do pacote já existia. O frontend não tem testes automatizados</td></tr>
+  <tr><td>Backup e restauração</td><td>Protocolos 5, 6 e 5</td><td>Teste de ponta a ponta com a API real e banco temporário</td></tr>
+  <tr><td>Análises: conferência independente</td><td>Coincidência (n = 70; &rho; = &minus;0,447)</td><td>Cálculo em outra implementação, lendo o banco por SQL</td></tr>
+  <tr><td>Painel no navegador (Edge)</td><td>Tema claro, escuro e 390 px; perfil cidadão sem a seção</td><td>Verificação manual com captura de tela; 0 erros de console</td></tr>
+  <tr><td>Carga e remoção dos dados de exemplo</td><td>84 protocolos carregados; remoção deixa 4 reais</td><td>Executado em banco temporário; repetível sem duplicar</td></tr>
+  <tr><td>Implantação e demonstração do contrato</td><td>Executadas em rede local</td><td>Saída reproduzida na seção 5.4</td></tr>
+</table>
+
+<!-- ============================ 7. REQUISITOS ============================ -->
+<h1>7. Quadro de requisitos da atividade</h1>
+<table>
+  <tr><th style="width:26%">Requisito</th><th style="width:25%">Situação inicial</th><th style="width:25%">Nesta atividade</th><th>Fica como recomendação</th></tr>
+  <tr><td><b>Parte 1.</b> Confidencialidade</td><td><span class="tag ex">Existente</span> Hash de senhas e tokens, RBAC</td><td><span class="tag im">Implementado</span> Sessão expira no servidor; chave fora da URL</td><td><span class="tag fu">Futuro</span> Criptografia do banco; cofre de segredos</td></tr>
+  <tr><td>Integridade</td><td><span class="tag pa">Parcial</span> Validação e trilha mutável</td><td><span class="tag im">Implementado</span> Cadeia de hashes com verificação</td><td><span class="tag fu">Futuro</span> Âncora externa do hash atual</td></tr>
+  <tr><td>Disponibilidade</td><td><span class="tag pa">Parcial</span> Cache, timeouts, limite de taxa</td><td><span class="tag im">Implementado</span> Backup e restauração testados</td><td><span class="tag fu">Futuro</span> Backup automático e fora da máquina</td></tr>
+  <tr><td>Logs, auditoria, monitoramento</td><td><span class="tag pa">Parcial</span> Log técnico e trilha</td><td><span class="tag im">Implementado</span> Verificação de integridade da trilha</td><td><span class="tag fu">Futuro</span> Alertas, tela de auditoria, health profundo</td></tr>
+  <tr><td>Cenário de incidente</td><td>Não havia</td><td><span class="tag im">Implementado</span> Adulteração detectada e recuperação</td><td><span class="tag fu">Futuro</span> Detecção automática</td></tr>
+  <tr><td><b>Parte 2.</b> Redes e relação com a CIA</td><td><span class="tag pa">Parcial</span> Proteções pontuais</td><td>Análise da arquitetura real e relação com a CIA (seção 3). Nenhuma infraestrutura nova</td><td><span class="tag fu">Futuro</span> TLS, proxy, segmentação, monitoramento de tráfego</td></tr>
+  <tr><td><b>Parte 3.</b> Correlação</td><td>Só estatística descritiva</td><td><span class="tag im">Implementado</span> Spearman, endpoint, painel</td><td><span class="tag fu">Futuro</span> p-valor, intervalos, dados reais</td></tr>
+  <tr><td>Regressão</td><td>Inexistente</td><td><span class="tag im">Implementado</span> Regressão linear do volume semanal</td><td><span class="tag fu">Futuro</span> Regressão múltipla</td></tr>
+  <tr><td><b>Parte 4.</b> Smart Contract (Solidity)</td><td>Inexistente</td><td><span class="tag im">Implementado</span> Contrato, 22 testes, implantação local</td><td><span class="tag fu">Futuro</span> Rede permissionada</td></tr>
+  <tr><td>Integração com a aplicação</td><td>Inexistente</td><td>Descrita como possibilidade (5.5)</td><td><span class="tag fu">Futuro</span> Integração assíncrona com a API</td></tr>
+</table>
+
+<!-- ============================ 8. LIMITAÇÕES ============================ -->
+<h1>8. Limitações e riscos conhecidos</h1>
+<p>Esta seção reúne, em um só lugar, o que não foi feito, não foi verificado ou tem uma restrição que o leitor precisa conhecer.</p>
+<ol>
+  <li><b>Estatística sobre dados fictícios.</b> Os resultados não descrevem o atendimento real; não há p-valor nem intervalo de confiança.</li>
+  <li><b>Cadeia de hashes da auditoria:</b> não detecta a remoção dos registros mais recentes nem um adversário com controle total do banco, e não protege as tabelas de negócio (ver S3).</li>
+  <li><b>Blockchain sem integração:</b> é um protótipo em rede local, com confiança centralizada no registrador e sem teste de custo.</li>
+  <li><b>Sessões em memória:</b> perdem-se no reinício e não têm limite absoluto de duração.</li>
+  <li><b>Chat com o Gemini:</b> a montagem da requisição foi testada, mas a chamada real não, por falta de chave de teste.</li>
+  <li><b>Backup:</b> manual, na mesma máquina e com dados em texto; a parada forçada pode perder as últimas gravações (comportamento observado e inferido, não instrumentado).</li>
+  <li><b>Divergências entre a documentação e o código</b> não corrigidas: Metas em <code>localStorage</code> (<code>Metas.jsx</code>), manual do chatbot desatualizado ("por bairro"), feedback e auditoria sem tela (seção 1.6).</li>
+  <li><b>Barra de navegação em telas estreitas:</b> já antes da atividade, a barra de navegação ultrapassa a largura em telas de 390 px ou menos, causando rolagem horizontal (medido: 425 px de conteúdo para 390 px de tela para o cidadão). A nova seção de análises cabe na tela; a causa é a barra, que não foi alterada.</li>
+  <li><b>Testes:</b> o frontend não tem testes automatizados (a verificação do painel foi manual, no Edge); os scripts PowerShell foram testados apenas no Windows PowerShell 5.1; a migração das novas colunas de auditoria não foi exercitada sobre um banco antigo em disco (o mecanismo é o mesmo já usado para a triagem).</li>
+  <li><b>Limite do corpo da requisição:</b> não foi verificado se a propriedade <code>max-http-form-post-size</code> limita corpos JSON (seção 3.1).</li>
+</ol>
+
+<!-- ============================ 9. FUTURO ============================ -->
+<h1>9. Recomendações para trabalhos futuros e conclusão</h1>
+
+<h2>9.1 Recomendações, em ordem sugerida de prioridade</h2>
+<ol>
+  <li><b>TLS e cabeçalhos de segurança</b> (proxy reverso, HTTPS, HSTS, CSP): maior ganho de confidencialidade e integridade em trânsito.</li>
+  <li><b>Criptografia do banco em repouso e dos backups</b>, com backup automático e cópia fora da máquina.</li>
+  <li><b>Alerta automático</b> para <code>integra: false</code> e para falhas de login em série; <code>/health</code> que consulte o banco; tela de auditoria.</li>
+  <li><b>Âncora externa</b> do hash mais recente da auditoria, integrando a cadeia de hashes ao contrato (assíncrona, tabela de pendências).</li>
+  <li><b>Limite absoluto de sessão</b> e login via gov.br; sessões fora da memória.</li>
+  <li><b>Estatística com dados reais:</b> p-valor e intervalos, validação com protocolos rotulados por atendentes, regressão múltipla.</li>
+  <li><b>Segmentação de rede</b> e saída restrita, se o sistema sair do computador de desenvolvimento.</li>
+</ol>
+
+<h2>9.2 Conclusão</h2>
+<p>A atividade combinou diagnóstico e implementação, e o critério foi o de acrescentar capacidade sem reescrever o sistema: nenhuma funcionalidade foi removida, nenhuma regra de negócio foi alterada e os 62 testes originais continuam passando junto de 55 novos. Cada uma das quatro frentes produziu algo demonstrável: um incidente de adulteração que passou a ser detectado e recuperável; um quadro de análise de rede que relaciona a arquitetura real aos três pilares da CIA; duas análises estatísticas conferidas contra um cálculo independente; e um contrato com testes, implantado em rede local. Igualmente importante é o que o trabalho declara não ter feito: os resultados estatísticos são de dados fictícios, a blockchain não está integrada à API, e várias medidas de produção (TLS, criptografia em repouso, monitoramento, âncora externa) permanecem como recomendação. Essas fronteiras estão registradas nas seções 8 e 9.1, de modo que a evolução futura possa partir de um ponto de apoio verificado.</p>
+
+<!-- ============================ APÊNDICES ============================ -->
+<h1>Apêndice A: como reproduzir</h1>
+<p>Pré-requisitos: Windows 10 ou 11 com internet na primeira execução (o <code>start.ps1</code> baixa JDK 21 e Node.js se faltarem). Comandos a partir da raiz do projeto.</p>
+<h3>Testes do backend (117)</h3>
+<pre><code>cd backend
+.\mvnw.cmd -B test</code></pre>
+<h3>Subir o sistema e ver o painel de análises (dados fictícios)</h3>
+<pre><code>.\start.ps1               # cria o banco na primeira vez
+.\stop.ps1
+cd backend
+.\carregar-dados-exemplo.ps1             # 84 protocolos fictícios (-Remover apaga só os exemplos)
+cd ..
+.\start.ps1               # entre como atendente: CPF 153.509.460-56 / senha Atendente@123</code></pre>
+<h3>Demonstrar a integridade da auditoria</h3>
+<pre><code># como atendente: GET http://localhost:3001/api/v1/auditoria/integridade  (integra: true)
+.\start.ps1 -ConsoleBanco   # console H2 em http://localhost:8082
+# altere um registro:  UPDATE auditoria SET detalhe = 'adulterado' WHERE id = '...';
+# consulte o endpoint de novo: integra: false e o id do registro alterado</code></pre>
+<h3>Backup e restauração (com a API parada)</h3>
+<pre><code>cd backend
+.\backup-banco.ps1
+.\restaurar-banco.ps1 -Backup .\backups\vidareal-AAAAMMDD-HHMMSS.sql</code></pre>
+<h3>Contrato (Node.js 20 ou mais novo)</h3>
+<pre><code>cd blockchain
+npm ci
+npm test            # 22 testes
+npm run node        # terminal 1: rede local na porta 8545
+npm run deploy      # terminal 2
+npm run demo</code></pre>
+<h3>Gerar este PDF novamente a partir do HTML</h3>
+<pre><code>msedge --headless=new --no-pdf-header-footer --print-to-pdf=docs\HackGov-Visao-de-Futuro.pdf docs\relatorio-visao-de-futuro.html</code></pre>
+
+<h1>Apêndice B: arquivos criados e alterados</h1>
+<table>
+  <tr><th style="width:14%">Etapa</th><th>Arquivos principais</th></tr>
+  <tr><td>S1</td><td><code>seguranca/SessaoService.java</code>, <code>application.properties</code>; testes <code>SessaoServiceTest</code>, <code>SessaoExpiracaoHttpTest</code></td></tr>
+  <tr><td>S2</td><td><code>web/ChatController.java</code>; teste <code>ChatControllerTest</code></td></tr>
+  <tr><td>S3</td><td><code>seguranca/CadeiaAuditoria.java</code> (novo), <code>repositorio/Repositorio.java</code>, <code>modelo/RegistroAuditoria.java</code>, <code>web/IndiceController.java</code>, <code>schema.sql</code>; testes <code>CadeiaAuditoriaTest</code>, <code>AuditoriaIntegridadeTest</code></td></tr>
+  <tr><td>S4</td><td><code>backend/backup-banco.ps1</code>, <code>restaurar-banco.ps1</code>, <code>banco-comum.ps1</code>, <code>carregar-dados-exemplo.ps1</code>; <code>.gitignore</code>, <code>README.md</code></td></tr>
+  <tr><td>E1, E2</td><td><code>analise/AnaliseEstatistica.java</code>, <code>analise/AnaliseProtocolos.java</code> (novos), <code>web/ProtocoloController.java</code>; <code>frontend/src/components/AnalisesProtocolos.jsx</code> (novo), <code>pages/Dashboard.jsx</code>, <code>api/protocoloService.js</code>; testes <code>AnaliseEstatisticaTest</code>, <code>AnaliseProtocolosTest</code>, <code>AnalisesEndpointTest</code></td></tr>
+  <tr><td>B1</td><td><code>blockchain/</code>: <code>contracts/RegistroProtocolos.sol</code>, <code>test/RegistroProtocolos.test.js</code>, <code>scripts/deploy.js</code>, <code>scripts/demo.js</code>, <code>hardhat.config.js</code>, <code>package.json</code>, <code>README.md</code></td></tr>
+  <tr><td>Documento</td><td><code>docs/relatorio-visao-de-futuro.html</code> (fonte) e <code>docs/HackGov-Visao-de-Futuro.pdf</code></td></tr>
+</table>
+<p class="small">Os arquivos legados da raiz, a tela de Metas e as regras de exclusão de protocolos não foram modificados.</p>
+
+<h1>Referências</h1>
+<p class="small">Fontes que o projeto usa ou que são oficialmente identificáveis. Recomenda-se conferir a redação e a numeração dos artigos antes da entrega.</p>
+<ul>
+  <li>BRASIL. <b>Lei nº 13.709, de 14 de agosto de 2018</b> (Lei Geral de Proteção de Dados Pessoais, LGPD), especialmente os artigos 6º (princípios, incluindo necessidade), 18 (direitos do titular), 20 (revisão de decisões automatizadas) e 46 (medidas de segurança).</li>
+  <li>SPEARMAN, C. The proof and measurement of association between two things. <b>The American Journal of Psychology</b>, v. 15, n. 1, p. 72-101, 1904.</li>
+  <li>Documentação oficial do <b>Hardhat</b> (hardhat.org), da linguagem <b>Solidity</b> (docs.soliditylang.org) e do banco <b>H2</b> (h2database.com), consultadas para as ferramentas <code>Script</code> e <code>RunScript</code>, o compilador e o framework de testes.</li>
+  <li>Documentação do <b>Spring Boot</b> (spring.io) e do <b>Google Gemini API</b> (cabeçalho de autenticação <code>x-goog-api-key</code>).</li>
+  <li>Código-fonte e documentação do próprio repositório <b>HackGov</b> (<code>README.md</code>, <code>backend/</code>, <code>frontend/</code>, <code>blockchain/</code>), que é a fonte primária de todas as evidências citadas.</li>
+</ul>
+
+</body>
+</html>

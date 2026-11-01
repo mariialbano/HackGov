@@ -18,10 +18,19 @@ public class RegistroAuditoria {
     private final String perfilAutor;
     private final String detalhe;
     private final Instant registradoEm;
+    private final String hashAnterior;
+    private final String hashRegistro;
 
+    /**
+     * @param hashAnterior hash do registro anterior na cadeia; nulo nos
+     *                     registros de antes da cadeia existir
+     * @param hashRegistro hash deste registro (ver CadeiaAuditoria)
+     */
     public RegistroAuditoria(String id, String acao, String recurso, String recursoId,
                              String cpfAutor, String perfilAutor, String detalhe,
-                             Instant registradoEm) {
+                             Instant registradoEm, String hashAnterior, String hashRegistro) {
+        this.hashAnterior = hashAnterior;
+        this.hashRegistro = hashRegistro;
         this.id = id;
         this.acao = acao;
         this.recurso = recurso;
@@ -62,5 +71,13 @@ public class RegistroAuditoria {
 
     public Instant getRegistradoEm() {
         return registradoEm;
+    }
+
+    public String getHashAnterior() {
+        return hashAnterior;
+    }
+
+    public String getHashRegistro() {
+        return hashRegistro;
     }
 }

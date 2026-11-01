@@ -109,13 +109,7 @@ public class ChatController {
                             "parts", List.of(Map.of("text", prompt)))),
                     "generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 800)));
 
-            HttpRequest chamada = HttpRequest.newBuilder()
-                    .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/"
-                            + modelo + ":generateContent?key=" + apiKey))
-                    .header("Content-Type", "application/json")
-                    .timeout(TIMEOUT)
-                    .POST(HttpRequest.BodyPublishers.ofString(payload))
-                    .build();
+            HttpRequest chamada = montarChamada(payload);
 
             HttpResponse<String> retorno = http.send(chamada, HttpResponse.BodyHandlers.ofString());
 
@@ -152,6 +146,22 @@ public class ChatController {
         } catch (Exception erro) {
             throw falhaGenerica(erro);
         }
+    }
+
+    /**
+     * Monta a chamada ao Gemini. A chave vai no cabecalho {@code x-goog-api-key},
+     * nunca na URL: URL aparece em logs de servidor, proxies e historico, e
+     * a chave ficaria exposta em qualquer um deles.
+     */
+    HttpRequest montarChamada(String payload) {
+        return HttpRequest.newBuilder()
+                .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/"
+                        + modelo + ":generateContent"))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .timeout(TIMEOUT)
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .build();
     }
 
     private ApiException falhaGenerica(Exception erro) {

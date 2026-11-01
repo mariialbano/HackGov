@@ -141,3 +141,12 @@ CREATE TABLE IF NOT EXISTS auditoria (
     CONSTRAINT pk_auditoria PRIMARY KEY (seq),
     CONSTRAINT uk_auditoria_id UNIQUE (id)
 );
+
+-- Cadeia de hashes da auditoria. Cada registro guarda o SHA-256 do registro
+-- anterior (hash_anterior) e o proprio (hash_registro, calculado sobre todos
+-- os campos mais o hash_anterior). Alterar ou apagar um registro do meio
+-- quebra a cadeia dali em diante, e o endpoint /auditoria/integridade aponta
+-- onde. As colunas entram por ALTER: registros antigos ficam com NULL e sao
+-- tratados como "anteriores a cadeia".
+ALTER TABLE auditoria ADD COLUMN IF NOT EXISTS hash_anterior CHAR(64);
+ALTER TABLE auditoria ADD COLUMN IF NOT EXISTS hash_registro CHAR(64);

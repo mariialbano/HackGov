@@ -28,6 +28,16 @@ Taubaté/SP.
 - **Exportação em PDF** — relatório da simulação de inflação e comprovante de protocolo
 - **Acessibilidade** — tema claro/escuro e tradutor de Libras (VLibras) com
   botão para ligar e desligar
+- **Análises estatísticas dos protocolos** — no painel do atendente, correlação
+  de Spearman entre prioridade e tempo de resolução e tendência do volume
+  semanal (regressão linear), com aviso quando os dados são fictícios
+- **Trilha de auditoria com verificação de integridade** — cada registro é
+  encadeado ao anterior por hash (SHA-256); alterar ou apagar um registro do
+  meio é detectado
+- **Backup e restauração do banco** — scripts que exportam e recarregam o H2
+  sem apagar o banco atual
+- **Registro de integridade em blockchain (protótipo)** — contrato Solidity
+  que guarda os hashes dos eventos dos protocolos, testado em rede local
 
 ## Estrutura do projeto
 
@@ -41,16 +51,21 @@ VidaReal/
 │       ├── hooks/       # Hooks próprios (sessão, tema, VLibras, avisos)
 │       ├── pages/       # Páginas (Login, Cadastro, Perfil, Dashboard...)
 │       └── utils/       # Validadores e utilitários
-└── backend/         # API RESTful (Java 21 + Spring Boot)
-    ├── pom.xml
-    └── src/main/java/br/gov/taubate/vidareal/
-        ├── modelo/        # entidades de domínio e enums
-        ├── repositorio/   # camada de dados
-        ├── seguranca/     # sessão, RBAC e limite de requisições
-        ├── triagem/       # IA: classificador Naive Bayes e regras de prioridade
-        ├── erro/          # exceções e tratamento central
-        ├── web/           # um controller por recurso da API
-        └── config/        # CORS, interceptors e log técnico
+├── backend/         # API RESTful (Java 21 + Spring Boot)
+│   ├── pom.xml
+│   ├── sql/             # consultas de análise e dados de exemplo (fictícios)
+│   ├── *.ps1            # backup, restauração e carga dos dados de exemplo
+│   └── src/main/java/br/gov/taubate/vidareal/
+│       ├── modelo/        # entidades de domínio e enums
+│       ├── repositorio/   # camada de dados
+│       ├── seguranca/     # sessão, RBAC, limite de requisições e cadeia de auditoria
+│       ├── triagem/       # IA: classificador Naive Bayes e regras de prioridade
+│       ├── analise/       # estatística: Spearman e regressão linear
+│       ├── erro/          # exceções e tratamento central
+│       ├── web/           # um controller por recurso da API
+│       └── config/        # CORS, interceptors e log técnico
+├── blockchain/      # protótipo: contrato Solidity + Hardhat (ver blockchain/README.md)
+└── docs/            # documento técnico da atividade Visão de Futuro (fonte HTML)
 ```
 
 ## Como rodar
@@ -201,11 +216,65 @@ Estes itens estão no `.gitignore` e ficam só na máquina de quem roda:
   dados de ninguém: na primeira execução a API cria um banco novo, apenas
   com as duas contas de demonstração.
 - **`.run/`** — os logs de execução.
+- **`backend/backups/`** — os backups do banco (contêm dados dos cidadãos).
+- **`docs/*.pdf`** — o PDF do documento técnico, gerado localmente a partir do HTML.
 
 Dentro do banco, as senhas existem apenas como hash BCrypt e os tokens de
 recuperação apenas como SHA-256. Os demais dados (nome, CPF, e-mail) ficam
 em texto, protegidos pelo fato de o arquivo não sair da máquina; cifrar o
 banco em disco seria o passo seguinte para um ambiente de produção.
+
+### Backup e restauração do banco
+
+Dois scripts em `backend/`, sobre as ferramentas do próprio H2 (`Script` e
+`RunScript`), sem dependência nova. Com a API **parada** (`.\stop.ps1`: o H2 em
+arquivo aceita um programa por vez):
+
+```powershell
+cd backend
+.\backup-banco.ps1                                   # grava backups\vidareal-AAAAMMDD-HHMMSS.sql
+.\restaurar-banco.ps1 -Backup .\backups\vidareal-20261030-234911.sql
+```
+
+- O backup é um arquivo `.sql` com o esquema e todos os dados; o script mostra
+  o tamanho e o SHA-256 do arquivo.
+- A restauração **não apaga** o banco atual: ele é movido para
+  `backend/data/antes-da-restauracao-AAAAMMDD-HHMMSS/` e o backup é carregado em
+  um banco novo. Se a carga falhar, o banco original volta ao lugar.
+- Com a API no ar, os dois scripts recusam rodar (o arquivo está em uso).
+- Depois de restaurar, `GET /api/v1/auditoria/integridade` (atendente) confere
+  que a cadeia de hashes da auditoria veio inteira.
+- `backend/backups/` está no `.gitignore`: o backup contém dados dos cidadãos
+  (CPF, e-mail) em texto, então deve ser guardado com o mesmo cuidado do banco.
+
+Limites: o backup é manual (não há agendamento) e fica na mesma máquina do
+banco, o que não protege contra a perda do computador. Em produção seria
+automático, cifrado e copiado para outro local. Parar a API com `.\stop.ps1`
+encerra o processo à força: gravações dos últimos instantes antes da parada
+podem não ter chegado ao disco, então convém esperar alguns segundos depois da
+última operação antes de parar e fazer o backup.
+
+### Dados de exemplo (fictícios) e análises estatísticas
+
+O banco novo nasce com 4 protocolos de demonstração: pouco para as análises do
+painel do atendente (Spearman e tendência de volume), que pedem ao menos 10
+protocolos concluídos com triagem e 4 semanas completas. Para demonstrá-las,
+carregue o conjunto de exemplo de `backend/sql/dados-exemplo.sql`: 13 cidadãos,
+84 protocolos, 41 avaliações e 15 metas, **todos fictícios** (os protocolos têm
+id `EX-...`).
+
+```powershell
+.\start.ps1               # uma vez, para criar o banco; depois .\stop.ps1
+cd backend
+.\carregar-dados-exemplo.ps1             # carrega (pode repetir: recarrega o mesmo conteúdo)
+.\carregar-dados-exemplo.ps1 -Remover    # apaga só os exemplos; os dados reais ficam
+```
+
+Suba a API de novo e entre como atendente (153.509.460-56): o Dashboard mostra
+**Análises dos protocolos**, com a faixa "Dados fictícios de demonstração". Sem
+dados de exemplo, a seção explica que a amostra é insuficiente em vez de
+mostrar um número. Os resultados descrevem os dados de exemplo, não o
+atendimento real.
 
 ### Usuários de demonstração
 
@@ -229,13 +298,13 @@ todos os endpoints disponíveis.
 |---|---|
 | **Autenticação** | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/recuperacao` · `POST /auth/recuperacao/confirmar` · `GET /auth/me` · `POST /auth/logout` |
 | **Perfil** | `GET`/`PUT` `/perfil` · `PATCH /perfil/senha` |
-| **Protocolos** | `GET`/`POST` `/protocolos` · `GET`/`PUT`/`DELETE` `/protocolos/:id` · `PATCH /protocolos/:id/status` · `GET /protocolos/estatisticas` |
+| **Protocolos** | `GET`/`POST` `/protocolos` · `GET`/`PUT`/`DELETE` `/protocolos/:id` · `PATCH /protocolos/:id/status` · `GET /protocolos/estatisticas` · `GET /protocolos/analises` (atendente) |
 | **Triagem (IA)** | `POST /protocolos/sugestao` · `GET /protocolos/triagem/modelo` (atendente) · `GET /protocolos?ordem=prioridade` (atendente) |
 | **Metas** | `GET`/`POST` `/metas` · `GET`/`PUT`/`DELETE` `/metas/:id` · `PATCH /metas/:id/aporte` |
 | **Feedbacks** | `POST /feedbacks` · `GET /feedbacks` (atendente) |
 | **Chat (IA)** | `POST /chat` |
 | **Dados abertos** | `GET /dados/ipca` · `GET /dados/selic` · `GET /dados/feriados` · `GET /dados/prazo` · `GET /dados/municipios` · `GET /dados/municipios/:id` · `GET /dados/cep/:cep` |
-| **Auditoria** | `GET /auditoria` (atendente) |
+| **Auditoria** | `GET /auditoria` (atendente) · `GET /auditoria/integridade` (atendente) |
 
 Boas práticas aplicadas: versionamento no caminho, métodos HTTP semânticos,
 códigos de status corretos (`200`, `201` + `Location`, `204`, `400`, `401`,
@@ -251,7 +320,7 @@ formulário que os originaram.
 
 ## Segurança da informação
 
-O sistema aplica três práticas de segurança, essenciais em um sistema
+O sistema aplica as práticas de segurança abaixo, essenciais em um sistema
 GovTech que lida com dados de cidadãos (CPF, metas financeiras,
 protocolos):
 
@@ -277,6 +346,11 @@ protocolos):
 - A sessão fica em `sessionStorage` e expira **ao fechar a aba** ou após
   **15 minutos de inatividade** — proteção para computadores
   compartilhados, comuns em telecentros e órgãos públicos.
+- A expiração por inatividade vale **também no servidor**: cada uso renova o
+  prazo, e um token parado além do limite passa a receber `401`, mesmo que
+  tenha sido copiado para fora do navegador. O limite é configurável em
+  `vidareal.sessao.inatividade-minutos` (padrão 15). As sessões ficam em
+  memória: reiniciar a API encerra todas.
 - Na tela de perfil o cidadão troca a própria senha
   (`PATCH /api/v1/perfil/senha`): é exigida a senha atual, a nova senha passa
   pela mesma política de senha forte, e **a sessão é encerrada no servidor após
@@ -350,6 +424,25 @@ protocolos):
      Perfil.ATENDENTE)` marca o endpoint e um interceptor a aplica antes
      do controller executar.
 - Mitiga XSS, injeção de conteúdo malicioso e abuso da API de IA.
+
+### 4. Integridade da trilha de auditoria
+
+- Cada registro da auditoria guarda o **SHA-256 do registro anterior**
+  (`hash_anterior`) e o seu próprio (`hash_registro`), calculado sobre todos
+  os campos mais o hash anterior. Alterar um registro, apagar um do meio ou
+  reordenar quebra a cadeia dali em diante.
+- `GET /api/v1/auditoria/integridade` (atendente) confere a cadeia e devolve
+  `integra`, o primeiro registro inválido e o motivo.
+- **Limites:** apagar os registros *mais recentes* não é detectado, e quem
+  controla o banco inteiro pode recalcular todos os hashes. A cadeia protege
+  a trilha, não as tabelas de negócio. Guardar o hash mais recente fora do
+  banco (por exemplo, no contrato de `blockchain/`) fecharia essas lacunas;
+  isso não foi integrado.
+
+### 5. Proteção da chave da IA
+
+- A chave do Google Gemini vai no cabeçalho `x-goog-api-key`, **nunca na URL**:
+  URLs aparecem em logs de servidor, proxies e históricos.
 
 ## Triagem inteligente de protocolos (IA)
 
@@ -587,8 +680,30 @@ livremente**, e um botão "usar minha cidade" traz de volta a do cadastro.
   (`aria-label`, `aria-pressed`, `sr-only`) e respeito a
   `prefers-reduced-motion`.
 
+## Atividade Visão de Futuro: o que foi acrescentado
+
+Evoluções feitas para a atividade da FIAP, sem remover funcionalidades nem
+mudar regras de negócio:
+
+| Tema | O que mudou | Onde ver |
+|---|---|---|
+| Segurança | Sessão expira por inatividade também no servidor | Seção "Autenticação de usuários" |
+| Segurança | Chave do Gemini no cabeçalho, fora da URL | Seção "Proteção da chave da IA" |
+| Segurança | Cadeia de hashes na auditoria e endpoint de integridade | Seção "Integridade da trilha de auditoria" |
+| Segurança | Backup e restauração do banco | Seção "Backup e restauração do banco" |
+| Estatística | Spearman (prioridade × tempo) e regressão do volume semanal, no painel do atendente | Seção "Dados de exemplo (fictícios) e análises estatísticas" |
+| Blockchain | Contrato Solidity que registra hashes dos eventos dos protocolos (protótipo, rede local, sem integração com a API) | [blockchain/README.md](blockchain/README.md) |
+
+**Testes:** o backend passou de 62 para **117 testes** (`cd backend; .\mvnw.cmd test`),
+e o contrato tem **22 testes** (`cd blockchain; npm test`). A parte de redes de
+comunicação foi atendida por análise da arquitetura existente, sem
+infraestrutura nova. O documento técnico completo (as quatro partes, testes e
+limitações) tem a fonte em `docs/relatorio-visao-de-futuro.html`; para gerar o
+PDF: `msedge --headless=new --no-pdf-header-footer --print-to-pdf=docs\HackGov-Visao-de-Futuro.pdf docs\relatorio-visao-de-futuro.html`.
+
 ## Tecnologias
 
 - **Frontend:** React 19, Vite, Tailwind CSS 4, React Router 7, Leaflet, Recharts, jsPDF, Lucide
 - **Backend:** Java 21, Spring Boot 3.5, Spring Web, Spring Mail (SMTP), Bean Validation, BCrypt
 - **Modelagem de dados:** Oracle SQL (3ª Forma Normal)
+- **Blockchain (protótipo):** Solidity 0.8.28, Hardhat 2, ethers 6 (pasta `blockchain/`)

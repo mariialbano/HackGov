@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import ServiceCard from '../components/ServiceCard';
+import AnalisesProtocolos from '../components/AnalisesProtocolos';
 import { useAuth } from '../hooks/useAuth';
 import { listarProtocolos } from '../api/protocoloService';
 
@@ -137,6 +138,9 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+
+        {/* ---------- Análises estatísticas: só o atendente vê (a API também recusa o cidadão) ---------- */}
+        {user?.perfil === 'atendente' && <AnalisesProtocolos />}
 
         {/* ---------- Ferramentas ---------- */}
         <section className="mt-10">

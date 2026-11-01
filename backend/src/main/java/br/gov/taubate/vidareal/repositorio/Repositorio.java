@@ -7,6 +7,7 @@ import br.gov.taubate.vidareal.modelo.Perfil;
 import br.gov.taubate.vidareal.modelo.Protocolo;
 import br.gov.taubate.vidareal.modelo.RegistroAuditoria;
 import br.gov.taubate.vidareal.modelo.Usuario;
+import br.gov.taubate.vidareal.seguranca.CadeiaAuditoria;
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -447,26 +449,56 @@ public class Repositorio {
                     rs.getString("cpf_autor"),
                     rs.getString("perfil_autor"),
                     rs.getString("detalhe"),
-                    lerInstante(rs, "registrado_em"));
+                    lerInstante(rs, "registrado_em"),
+                    rs.getString("hash_anterior"),
+                    rs.getString("hash_registro"));
 
-    public void registrarAuditoria(String acao, String recurso, String recursoId,
-                                   String cpfAutor, String perfilAutor, String detalhe) {
-        jdbc.update("""
-                INSERT INTO auditoria
-                       (id, acao, recurso, recurso_id, cpf_autor, perfil_autor, detalhe, registrado_em)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                UUID.randomUUID().toString(), acao, recurso, recursoId,
-                cpfAutor, perfilAutor, detalhe, paraBanco(Instant.now()));
+    private static final String COLUNAS_AUDITORIA =
+            "id, acao, recurso, recurso_id, cpf_autor, perfil_autor, detalhe, registrado_em, "
+                    + "hash_anterior, hash_registro";
+
+    /**
+     * Grava uma acao na trilha, encadeada ao registro anterior (ver
+     * {@code CadeiaAuditoria}).
+     *
+     * <p>{@code synchronized}: ler o ultimo hash e gravar o novo precisa ser
+     * uma operacao so, senao duas acoes simultaneas partiriam do mesmo
+     * "anterior" e a cadeia se bifurcaria. Basta para uma unica instancia da
+     * API; com varias, o controle passaria para o banco.</p>
+     */
+    public synchronized void registrarAuditoria(String acao, String recurso, String recursoId,
+                                                String cpfAutor, String perfilAutor, String detalhe) {
+        String id = UUID.randomUUID().toString();
+        // Milissegundos: precisao que o banco devolve sem arredondar, para o
+        // hash recalculado na verificacao ser o mesmo do gravado.
+        Instant quando = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        List<String> ultimo = jdbc.queryForList(
+                "SELECT hash_registro FROM auditoria ORDER BY seq DESC FETCH FIRST 1 ROW ONLY",
+                String.class);
+        String anterior = ultimo.isEmpty() || ultimo.get(0) == null
+                ? CadeiaAuditoria.GENESIS
+                : ultimo.get(0);
+
+        String hash = CadeiaAuditoria.calcular(anterior, id, acao, recurso, recursoId,
+                cpfAutor, perfilAutor, detalhe, quando);
+
+        jdbc.update("INSERT INTO auditoria (" + COLUNAS_AUDITORIA
+                        + ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                id, acao, recurso, recursoId, cpfAutor, perfilAutor, detalhe,
+                paraBanco(quando), anterior, hash);
     }
 
     /** Acoes mais recentes primeiro (LIFO). */
     public List<RegistroAuditoria> listarAuditoria() {
-        return jdbc.query("""
-                SELECT id, acao, recurso, recurso_id, cpf_autor, perfil_autor, detalhe, registrado_em
-                  FROM auditoria
-                 ORDER BY seq DESC
-                """, MAPA_AUDITORIA);
+        return jdbc.query("SELECT " + COLUNAS_AUDITORIA + " FROM auditoria ORDER BY seq DESC",
+                MAPA_AUDITORIA);
+    }
+
+    /** Do mais antigo para o mais recente: a ordem em que a cadeia foi montada. */
+    public List<RegistroAuditoria> listarAuditoriaCronologica() {
+        return jdbc.query("SELECT " + COLUNAS_AUDITORIA + " FROM auditoria ORDER BY seq",
+                MAPA_AUDITORIA);
     }
 
     // ---------- Conversao de datas ----------

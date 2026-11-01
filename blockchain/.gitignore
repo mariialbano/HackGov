@@ -1,0 +1,6 @@
+node_modules/
+# Gerados pelo Hardhat
+artifacts/
+cache/
+# Endereco do contrato na rede local: muda a cada `npm run node`
+deployments/
