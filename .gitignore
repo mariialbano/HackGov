@@ -24,3 +24,6 @@ backend/data/
 
 # Backups do banco (contem dados dos cidadaos): nunca versionar
 backend/backups/
+
+# PDF do documento tecnico: gerado localmente a partir de docs/relatorio-visao-de-futuro.html
+docs/*.pdf
